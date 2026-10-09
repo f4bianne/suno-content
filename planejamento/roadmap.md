@@ -359,8 +359,8 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 ### Fase 0: Fundamentos
 - [x] 1. Definir os três níveis com regras mensuráveis
 - [x] 2. Construir o glossário (nível mínimo de cada termo; também usado para normalizar termos)
-- [ ] 3. Montar o corpus fixo de 6 a 10 documentos variados
-- [ ] 4. Fechar stack e modelos (LangGraph ou Pydantic AI; modelo gerador; modelo juiz)
+- [x] 3. Montar o corpus fixo de 6 a 10 documentos variados
+- [x] 4. Fechar stack e modelos (LangGraph ou Pydantic AI; modelo gerador; modelo juiz)
 
 ### Fase 1: Avaliador
 - [ ] 6. Métricas determinísticas: legibilidade, densidade de termos, limites de formato
@@ -428,3 +428,18 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 - Persistência do perfil do visitante (ID anônimo com consentimento, depois login).
 - Recomendações mais sofisticadas com histórico entre visitas.
 - Integração com os canais de publicação da Suno.
+
+## 8. Decisões de stack e modelos
+
+| Camada | Escolha | Motivo |
+|---|---|---|
+| Orquestração | LangGraph + Pydantic | 9 ramos paralelos, roteamento condicional e retry por ramo; Pydantic para âncora, formatos e saída do Juiz |
+| API e interface | FastAPI (SSE) + React/Vite/TS | Progresso ramo a ramo |
+| Banco | PostgreSQL | Versões, cache e histórico |
+| PLN | spaCy + Pyphen | Lematização do glossário; sílabas do Flesch PT-BR |
+| PDF | pdfplumber (PyMuPDF como alternativa) | Tabelas de releases |
+| Renderização | Jinja2 + Playwright | Template HTML único do carrossel |
+| Extrator e gerador | Claude Sonnet 5.5 (`claude-sonnet-5-5`) | Haiku 5.5 como opção barata a medir na Fase 6 |
+| Juiz | Groq, `openai/gpt-oss-120b` | Família diferente do gerador; aceita JSON Schema estrito. Conferir o ID na documentação da Groq ao implementar |
+
+Modelo, prompt e versão do glossário ficam registrados em cada versão gerada, e os experimentos de uma comparação usam os mesmos modelos. Chaves de API ficam em variável de ambiente, fora do repositório.
