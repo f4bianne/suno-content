@@ -124,6 +124,7 @@ flowchart TD
 - Termos do glossário destacados no texto e métricas ao lado de cada conteúdo.
 - Antes e depois do refinement loop.
 - Visão do leitor com nível inferido, data de geração e fonte visíveis.
+- Seletor de nível (e de formato) sempre visível: o nível inferido é o padrão, e a escolha do visitante prevalece sobre a inferência.
 - Navegação pelo histórico de versões.
 - Exportações: Figma e prompt para IA de imagem, com aviso de que imagens geradas externamente não passaram pelo avaliador.
 
@@ -299,7 +300,7 @@ Todas as versões, aprovadas e reprovadas, são gravadas no banco com data, docu
 
 A FastAPI devolve o JSON com conteúdo e métricas. O React:
 
-- Mostra a versão do nível inferido, com data e fonte.
+- Mostra a versão do nível inferido, com data e fonte, e um seletor com os três níveis. Trocar de nível ou de formato não chama LLM, porque as 9 versões já estão no cache. Enquanto o visitante não escolhe, vale o nível inferido; depois que escolhe, vale a escolha.
 - Renderiza o carrossel a partir do **template HTML único** (o mesmo que o backend usa para gerar PNG com **Playwright** e para exportar ao Figma).
 - Destaca os termos do glossário e exibe as métricas.
 - Oferece a matriz 3x3, o histórico de versões e as exportações.
@@ -337,7 +338,7 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 
 - **Gerar uma vez, servir muitas vezes.** O cache compartilhado faz com que mil leitores de uma mesma ata custem uma única geração.
 - **Atualização automática.** O monitor detecta documentos novos nas fontes oficiais e gera o conteúdo antes que alguém peça.
-- **Priorização do nível do visitante.** O ramo do nível inferido roda primeiro, e a pessoa lê enquanto os outros terminam.
+- **Priorização do nível do visitante.** O ramo do nível inferido roda primeiro, e a pessoa lê enquanto os outros terminam. Como o visitante pode trocar de nível, os outros 8 ramos continuam obrigatórios.
 - **Retry por ramo.** Só a combinação reprovada é refeita, não as 9.
 
 ### Experiência do leitor
@@ -356,11 +357,10 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 ## 5. Roteiro
 
 ### Fase 0: Fundamentos
-- [ ] 1. Definir os três níveis com regras mensuráveis
-- [ ] 2. Construir o glossário (nível mínimo de cada termo; também usado para normalizar termos)
+- [x] 1. Definir os três níveis com regras mensuráveis
+- [x] 2. Construir o glossário (nível mínimo de cada termo; também usado para normalizar termos)
 - [ ] 3. Montar o corpus fixo de 6 a 10 documentos variados
 - [ ] 4. Fechar stack e modelos (LangGraph ou Pydantic AI; modelo gerador; modelo juiz)
-- [ ] 5. Organizar time e convenções no GitHub
 
 ### Fase 1: Avaliador
 - [ ] 6. Métricas determinísticas: legibilidade, densidade de termos, limites de formato
@@ -398,7 +398,7 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 - [ ] 26. FastAPI com progresso em tempo real
 - [ ] 27. Matriz de saídas 3x3 com mapa de calor
 - [ ] 28. Pré-visualização, termos destacados, métricas e antes/depois do loop
-- [ ] 29. Visão do leitor com nível inferido, data e fonte
+- [ ] 29. Visão do leitor com nível inferido, seletor de nível e formato, data e fonte
 - [ ] 30. Navegação pelo histórico de versões
 
 ### Fase 8: Diferenciais (cortáveis, nesta ordem)
