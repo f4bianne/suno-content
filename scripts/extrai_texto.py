@@ -20,7 +20,7 @@ def htm(p):
     s=re.sub(r'\n\s*\n+','\n',s)
     open(out,'w',encoding='utf-8').write(s); return p,len(s)
 if __name__=='__main__':
-    pdfs=[p for p in glob.glob('dados/corpus/**/*.pdf',recursive=True) if 'glossarios' not in p]
+    pdfs=[p for p in glob.glob('dados/corpus/**/*.pdf',recursive=True)]
     with Pool(6) as pool: res=pool.map(pdf,pdfs,chunksize=2)
     for p in glob.glob('dados/corpus/**/*.html',recursive=True): res.append(htm(p))
     bad=[r for r in res if isinstance(r[1],str) and r[1]!='skip']

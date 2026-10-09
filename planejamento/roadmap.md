@@ -363,10 +363,10 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 - [x] 4. Fechar stack e modelos (LangGraph ou Pydantic AI; modelo gerador; modelo juiz)
 
 ### Fase 1: Avaliador
-- [ ] 6. Métricas determinísticas: legibilidade, densidade de termos, limites de formato
+- [x] 6. Métricas determinísticas: legibilidade, densidade de termos, limites de formato
 - [ ] 7. Calibrar limiares com textos de referência
-- [ ] 8. Cobertura da âncora (anti-trivialização)
-- [ ] 9. Detecção de linguagem de recomendação
+- [x] 8. Cobertura da âncora (anti-trivialização)
+- [x] 9. Detecção de linguagem de recomendação
 - [ ] 10. Juiz LLM com rubrica estruturada
 - [ ] 11. Classificador cego da matriz de confusão
 
