@@ -1,0 +1,39 @@
+# Limiares do avaliador determinístico (roadmap, itens 6 e 7).
+# Regras de nível em planejamento/niveis.md. Calibração: scripts/calibra.py.
+# Calibrado = ajustado com medidas do corpus. O resto continua hipótese até haver textos gerados
+# (Fase 3): o corpus só tem textos técnicos, não há texto de referência de nível iniciante ou intermediário.
+
+niveis:
+  iniciante:
+    flesch: [60, 100]   # hipótese: o glossário leigo do BC tem mediana 41, então 60 é meta do gerador, não observação
+    cobertura_minima: 0.80
+    nivel_maximo_termo_sem_explicacao: 1   # nível 2 só com explicação; nível 3 proibido
+    nivel_maximo_termo_com_explicacao: 2
+  intermediario:
+    flesch: [40, 60]   # hipótese
+    cobertura_minima: 0.80
+    nivel_maximo_termo_sem_explicacao: 2   # nível 3 só com explicação
+    nivel_maximo_termo_com_explicacao: 3
+  avancado:
+    flesch: [0, 50]   # calibrado: atas, relatórios e normas têm mediana 30-45 e P90 de 54-55; [0, 40] reprovaria metade deles
+    cobertura_minima: 0.90
+    nivel_maximo_termo_sem_explicacao: 3
+    nivel_maximo_termo_com_explicacao: 3
+    densidade_minima_termos_nivel23_por_100_palavras: 1.0   # calibrado: o grupo de menor média no corpus (relatórios do BC) tem 1,3
+
+# Números fora da âncora reprovam. Só o iniciante pode arredondar, desde que declare
+# ("quase", "cerca de") e fique dentro da tolerância relativa.
+numeros:
+  arredondamento_permitido_em: [iniciante]
+  tolerancia_relativa: 0.05
+  marcadores: ["quase", "cerca de", "aproximadamente", "perto de", "mais ou menos", "em torno de"]
+
+formatos:
+  artigo:
+    palavras: [400, 1200]
+  carrossel:
+    slides: [5, 10]
+    caracteres_por_slide: 220
+  video:
+    duracao_maxima_s: 60
+    palavras_por_segundo: 2.5
