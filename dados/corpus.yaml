@@ -1,0 +1,60 @@
+# Corpus fixo de referência (roadmap, item 3): documentos oficiais e públicos.
+# O repositório guarda só esta lista; os arquivos baixados ficam em dados/corpus/ (fora do git).
+# Para baixar: python scripts/baixa_corpus.py
+# Depois, para extrair o texto: python scripts/extrai_texto.py
+
+atas_copom:
+  # Atas do Copom (BC). A lista de reuniões vem da API; o PDF segue o padrão abaixo.
+  api: "https://www.bcb.gov.br/api/servico/sitebcb/copom/atas?quantidade=500&filtro="
+  url: "https://www.bcb.gov.br/content/copom/atascopom/Copom{nro}-not{data}{nro}.pdf"
+  reuniao_minima: 200   # as anteriores usam outro padrão de endereço
+  pasta: atas_copom
+
+padroes:
+  # Documentos periódicos; combinações inexistentes (404) são ignoradas.
+  - nome: relatorio_inflacao
+    descricao: "Relatório de Inflação (até 2024) e de Política Monetária (a partir de 2025), BC"
+    pasta: relatorios_bc
+    anos: [2016, 2026]
+    meses: ["03", "06", "09", "12"]
+    urls:
+      ate_2024: "https://www.bcb.gov.br/content/ri/relatorioinflacao/{ano}{mes}/ri{ano}{mes}P.pdf"
+      desde_2025: "https://www.bcb.gov.br/content/ri/relatorioinflacao/{ano}{mes}/rpm{ano}{mes}p.pdf"
+    arquivo: "rpm_{ano}{mes}.pdf"
+  - nome: estabilidade_financeira
+    descricao: "Relatório de Estabilidade Financeira, BC (semestral)"
+    pasta: estabilidade_financeira
+    anos: [2016, 2026]
+    meses: ["04", "05", "10", "11"]
+    urls:
+      todos: "https://www.bcb.gov.br/content/publicacoes/ref/{ano}{mes}/RELESTAB{ano}{mes}-refPub.pdf"
+    arquivo: "ref_{ano}{mes}.pdf"
+
+arquivos:
+  # Fontes individuais.
+  - {pasta: cvm, arquivo: resolucao_175_parte_geral.pdf, url: "https://conteudo.cvm.gov.br/export/sites/cvm/legislacao/resolucoes/anexos/100/resol175consolid_ParteGeral.pdf"}
+  - {pasta: cvm, arquivo: resolucao_175_anexo_01.pdf, url: "https://conteudo.cvm.gov.br/export/sites/cvm/legislacao/resolucoes/anexos/100/resol175consolid_Anexo01.pdf"}
+  - {pasta: cvm, arquivo: resolucao_175_anexo_02.pdf, url: "https://conteudo.cvm.gov.br/export/sites/cvm/legislacao/resolucoes/anexos/100/resol175consolid_Anexo02.pdf"}
+  - {pasta: cvm, arquivo: resolucao_175_completa.pdf, url: "https://conteudo.cvm.gov.br/export/sites/cvm/legislacao/resolucoes/anexos/100/resol175consolid.pdf"}
+  - {pasta: cvm, arquivo: resolucao_160.pdf, url: "https://conteudo.cvm.gov.br/export/sites/cvm/legislacao/resolucoes/anexos/100/resol160consolid.pdf"}
+  - {pasta: cvm, arquivo: resolucao_80.pdf, url: "https://conteudo.cvm.gov.br/export/sites/cvm/legislacao/resolucoes/anexos/001/resol080consolid.pdf"}
+  - {pasta: cvm, arquivo: resolucao_88.pdf, url: "https://conteudo.cvm.gov.br/export/sites/cvm/legislacao/resolucoes/anexos/001/resol088consolid.pdf"}
+  - {pasta: cvm, arquivo: resolucao_180.pdf, url: "https://conteudo.cvm.gov.br/export/sites/cvm/legislacao/resolucoes/anexos/100/resol180.pdf"}
+  - {pasta: cvm, arquivo: oficio_circular_sin_sse_02_2023.pdf, url: "https://conteudo.cvm.gov.br/export/sites/cvm/legislacao/oficios-circulares/sin/anexos/oc-sin-sse-0223.pdf"}
+  - {pasta: tesouro, arquivo: paf_2023.pdf, url: "https://cdn.tesouro.gov.br/sistemas-internos/apex/producao/sistemas/thot/arquivos/publicacoes/46035_2284203/PAF-PT_2023_01_26.pdf?v=6884%3Ainline"}
+  - {pasta: tesouro, arquivo: paf_2021.pdf, url: "https://cdn.tesouro.gov.br/sistemas-internos/apex/producao/sistemas/thot/arquivos/publicacoes/37048_1150233/PAF-PT_2021_01_27-17h.pdf"}
+  - {pasta: tesouro, arquivo: rmd_2025_01.pdf, url: "https://cdn.tesouro.gov.br/sistemas-internos/apex/producao/sistemas/thot/arquivos/publicacoes/51454_1610380/Texto_RMD_Jan_25.pdf"}
+  - {pasta: tesouro, arquivo: rmd_2025_03.pdf, url: "https://cdn.tesouro.gov.br/sistemas-internos/apex/producao/sistemas/thot/arquivos/publicacoes/51976_1660866/Texto_RMD_Mar_25.pdf"}
+  - {pasta: tesouro, arquivo: rmd_2025_06.pdf, url: "https://cdn.tesouro.gov.br/sistemas-internos/apex/producao/sistemas/thot/arquivos/publicacoes/52608_1694563/Texto_RMD_Jun_25.pdf"}
+  - {pasta: tesouro, arquivo: rmd_2025_09.pdf, url: "https://cdn.tesouro.gov.br/sistemas-internos/apex/producao/sistemas/thot/arquivos/publicacoes/53154_1725050/Texto_RMD_Set_25.pdf"}
+  - {pasta: tesouro, arquivo: rmd_2024_03.pdf, url: "https://cdn.tesouro.gov.br/sistemas-internos/apex/producao/sistemas/thot/arquivos/publicacoes/49474_1549000/Texto_RMD_Mar_24.pdf"}
+  - {pasta: empresas, arquivo: petrobras_3t25.html, url: "https://agencia.petrobras.com.br/w/petrobras-atinge-lucro-l%C3%ADquido-de-r-32-7-bilh%C3%B5es-no-terceiro-trimestre-de-2025"}
+  - {pasta: empresas, arquivo: petrobras_1t26.html, url: "https://agencia.petrobras.com.br/w/negocio/petrobras-registra-lucro-l%C3%ADquido-de-r-32-7-bilh%C3%B5es-no-primeiro-trimestre-de-2026"}
+  - {pasta: empresas, arquivo: vale_3t25.html, url: "https://vale.com/check-out-the-3q25-financial-results"}
+  - {pasta: empresas, arquivo: vale_4t25.html, url: "https://vale.com/check-out-the-4q25-financial-results"}
+  - {pasta: empresas, arquivo: vale_1t26.html, url: "https://www.vale.com/check-out-the-1q26-financial-results"}
+  - {pasta: glossarios, arquivo: bcb_glossario_simplificado.pdf, url: "https://www.bcb.gov.br/content/cidadaniafinanceira/documentos_cidadania/Informacoes_gerais/glossario_cidadania_financeira.pdf"}
+
+manuais:
+  # O site bloqueia download por script; salvar pelo navegador em dados/corpus/<pasta>/.
+  - {pasta: empresas, arquivo: itau_2t25.pdf, url: "https://www.itau.com.br/relacoes-com-investidores", nota: "Análise Gerencial da Operação do 2T25"}
