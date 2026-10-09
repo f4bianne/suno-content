@@ -1,3 +1,5 @@
 Case Suno __ Academy __ Finance.pdf
 *.pdf
 dados/corpus/
+__pycache__/
+.pytest_cache/
