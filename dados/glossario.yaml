@@ -1,0 +1,384 @@
+# Glossário de termos financeiros com nível mínimo (roadmap, Fase 0, item 2).
+# Regra de nível e fundamentação em planejamento/niveis.md.
+#
+# Campos de cada termo:
+#   termo             forma canônica
+#   nivel             nível mínimo em que o termo aparece sem explicação (1, 2 ou 3)
+#   categoria         assunto, para revisão
+#   fonte             chave de `fontes`
+#   variantes         outras formas para casar no texto (a forma canônica já conta)
+#   ambiguo           true quando a palavra também tem uso comum fora de finanças;
+#                     o casamento deve exigir contexto
+#   explicacao_curta  paráfrase própria (não copia o texto das fontes)
+#   docs_corpus       em quantos dos 155 documentos do corpus o termo (ou variante) aparece;
+#                     calculado por script, não editar à mão
+#
+# Convenções de casamento:
+#   - variante toda em maiúsculas (CDI, IPCA) casa só em maiúsculas e como palavra inteira;
+#   - as demais casam sem diferença de caixa, por lematização;
+#   - no mesmo nível, vale a forma mais longa (juros compostos antes de juros).
+#
+# Fora da lista, por não serem conceitos financeiros: Aprender Valor, Calculadora do Cidadão,
+# Registrato, Serasa, SPC Brasil, Senha, Bloqueio, Desbloqueio, Crédito/Débito (no extrato).
+# O glossário da B3 só foi lido de A até "Agressão" (página 1 de 3).
+
+fontes:
+  bcb:
+    nome: "Glossário Simplificado de Termos Financeiros (Banco Central, Cidadania Financeira)"
+    url: "https://www.bcb.gov.br/content/cidadaniafinanceira/documentos_cidadania/Informacoes_gerais/glossario_cidadania_financeira.pdf"
+  cvm:
+    nome: "Dicionário CVM"
+    url: "https://www.gov.br/cvm/pt-br/centrais-de-conteudo/dicionario-cvm"
+    licenca: "CC BY-ND 3.0 (citar sem adaptar o texto)"
+  b3:
+    nome: "Glossário Bora Investir (B3)"
+    url: "https://borainvestir.b3.com.br/glossario/"
+    licenca: "Todos os direitos reservados (só nome do termo e link)"
+  corpus:
+    nome: "Jargão recorrente nas atas do Copom, relatórios do BC e normas da CVM do corpus, sem verbete em glossário para leigos"
+    url: null
+    nota: "Nível 3 por ausência nos glossários abertos; confirmar na calibração"
+  mercado:
+    nome: "Jargão de balanço e de mercado usado em releases de empresas e bancos, sem verbete nos glossários abertos consultados"
+    url: null
+    nota: "O corpus tem poucos releases; nível provisório"
+
+termos:
+  # ---------- Banco Central: investimentos e índices ----------
+  - {termo: "ação", nivel: 1, categoria: renda_variavel, fonte: bcb, variantes: ["ações"], explicacao_curta: "pedaço de uma empresa que pode ser comprado na bolsa", docs_corpus: 82}
+  - {termo: "bolsa de valores", nivel: 1, categoria: renda_variavel, fonte: bcb, variantes: ["bolsa"], explicacao_curta: "ambiente em que se compram e vendem ações e outros ativos", docs_corpus: 46}
+  - {termo: "aplicação", nivel: 1, categoria: investimentos, fonte: bcb, variantes: ["investimento", "aplicações", "investimentos"], explicacao_curta: "dinheiro colocado em algo para render com o tempo", docs_corpus: 96}
+  - {termo: "poupança", nivel: 1, categoria: investimentos, fonte: bcb, variantes: ["caderneta de poupança", "conta poupança", "conta-poupança"], explicacao_curta: "aplicação simples, de baixo risco, com rendimento definido por regra", docs_corpus: 54}
+  - {termo: "poupança ativa", nivel: 2, categoria: investimentos, fonte: bcb, explicacao_curta: "hábito de guardar parte da renda de forma planejada", docs_corpus: 0}
+  - {termo: "juros", nivel: 1, categoria: macro, fonte: bcb, variantes: ["juro", "taxa de juros", "taxas de juros"], explicacao_curta: "preço pago por usar dinheiro emprestado, ou ganho por emprestar", docs_corpus: 148}
+  - {termo: "juros simples", nivel: 1, categoria: matematica_financeira, fonte: bcb, explicacao_curta: "juros calculados sempre sobre o valor inicial", docs_corpus: 0}
+  - {termo: "juros compostos", nivel: 2, categoria: matematica_financeira, fonte: bcb, variantes: ["juros sobre juros"], explicacao_curta: "juros calculados também sobre os juros já acumulados", docs_corpus: 0}
+  - {termo: "inflação", nivel: 1, categoria: indices, fonte: bcb, explicacao_curta: "alta geral dos preços, que reduz o que o dinheiro compra", docs_corpus: 144}
+  - {termo: "Selic", nivel: 2, categoria: politica_monetaria, fonte: bcb, variantes: ["taxa Selic", "taxa básica de juros", "taxa básica", "juros básicos", "SELIC"], explicacao_curta: "taxa básica de juros da economia, definida pelo Copom", docs_corpus: 142}
+  - {termo: "Copom", nivel: 2, categoria: politica_monetaria, fonte: bcb, variantes: ["Comitê de Política Monetária", "COPOM"], explicacao_curta: "comitê do Banco Central que decide a taxa Selic", docs_corpus: 123}
+  - {termo: "IPCA", nivel: 2, categoria: indices, fonte: bcb, variantes: ["Índice de Preços ao Consumidor Amplo"], explicacao_curta: "índice oficial de inflação, calculado pelo IBGE", docs_corpus: 90}
+  - {termo: "orçamento familiar", nivel: 1, categoria: educacao_financeira, fonte: bcb, variantes: ["orçamento doméstico"], explicacao_curta: "controle do que a família ganha e gasta", docs_corpus: 0}
+  - {termo: "educação financeira", nivel: 1, categoria: educacao_financeira, fonte: bcb, explicacao_curta: "saber usar o dinheiro e os produtos financeiros com consciência", docs_corpus: 1}
+  - {termo: "perfil do investidor", nivel: 1, categoria: investimentos, fonte: bcb, explicacao_curta: "tolerância a risco e objetivos de quem investe", docs_corpus: 2}
+  - {termo: "risco", nivel: 1, categoria: investimentos, fonte: bcb, variantes: ["riscos"], explicacao_curta: "chance de o resultado ser pior que o esperado", docs_corpus: 144}
+  - {termo: "rentabilidade", nivel: 1, categoria: investimentos, fonte: bcb, variantes: ["rendimento", "retorno"], explicacao_curta: "quanto um investimento rendeu em relação ao valor aplicado", docs_corpus: 77}
+  - {termo: "rentabilidade bruta", nivel: 2, categoria: investimentos, fonte: bcb, variantes: ["rendimento bruto"], explicacao_curta: "rendimento antes de impostos e taxas", docs_corpus: 2}
+  - {termo: "rentabilidade líquida", nivel: 2, categoria: investimentos, fonte: bcb, variantes: ["rendimento líquido"], explicacao_curta: "rendimento que sobra depois de impostos e taxas", docs_corpus: 3}
+  - {termo: "resgate", nivel: 2, categoria: investimentos, fonte: bcb, variantes: ["resgatar"], explicacao_curta: "retirada do dinheiro de uma aplicação", docs_corpus: 36}
+  - {termo: "liquidez", nivel: 2, categoria: investimentos, fonte: bcb, explicacao_curta: "facilidade e rapidez de transformar um ativo em dinheiro", docs_corpus: 64}
+  - {termo: "fundo de investimento", nivel: 2, categoria: investimentos, fonte: bcb, variantes: ["fundos de investimento", "fundo"], explicacao_curta: "dinheiro de vários investidores reunido e gerido em conjunto", docs_corpus: 64}
+  - {termo: "taxa de administração", nivel: 2, categoria: investimentos, fonte: bcb, explicacao_curta: "valor cobrado por quem gere um fundo ou consórcio", docs_corpus: 5}
+  - {termo: "ativo", nivel: 2, categoria: contabilidade, fonte: bcb, ambiguo: true, variantes: ["ativos"], explicacao_curta: "bem ou direito que tem valor e pode gerar retorno", docs_corpus: 128}
+  - {termo: "Tesouro Direto", nivel: 1, categoria: renda_fixa, fonte: bcb, explicacao_curta: "programa para pessoas comprarem títulos do governo", docs_corpus: 6}
+  - {termo: "título público", nivel: 1, categoria: renda_fixa, fonte: bcb, variantes: ["títulos públicos"], explicacao_curta: "papel pelo qual o governo pede dinheiro emprestado", docs_corpus: 54}
+  - {termo: "CDB", nivel: 2, categoria: renda_fixa, fonte: bcb, variantes: ["Certificado de Depósito Bancário"], explicacao_curta: "empréstimo que o investidor faz ao banco em troca de juros", docs_corpus: 19}
+  - {termo: "CDI", nivel: 2, categoria: indices, fonte: bcb, variantes: ["Certificado de Depósito Interbancário"], explicacao_curta: "taxa dos empréstimos entre bancos, usada como referência de rendimento", docs_corpus: 3}
+  - {termo: "LCI", nivel: 2, categoria: renda_fixa, fonte: bcb, variantes: ["Letra de Crédito Imobiliário"], explicacao_curta: "título de banco ligado ao crédito imobiliário", docs_corpus: 19}
+  - {termo: "LCA", nivel: 2, categoria: renda_fixa, fonte: bcb, variantes: ["Letra de Crédito do Agronegócio"], explicacao_curta: "título de banco ligado ao crédito do agronegócio", docs_corpus: 19}
+  - {termo: "LCD", nivel: 2, categoria: renda_fixa, fonte: bcb, variantes: ["Letra de Crédito do Desenvolvimento"], explicacao_curta: "título de banco ligado a financiamento do desenvolvimento", docs_corpus: 0}
+  - {termo: "letra de câmbio", nivel: 2, categoria: renda_fixa, fonte: bcb, explicacao_curta: "título em que uma financeira promete pagar o valor investido com juros", docs_corpus: 0}
+  - {termo: "letra financeira", nivel: 2, categoria: renda_fixa, fonte: bcb, variantes: ["LF"], explicacao_curta: "título de longo prazo emitido por instituições financeiras", docs_corpus: 11}
+  - {termo: "letra hipotecária", nivel: 2, categoria: renda_fixa, fonte: bcb, explicacao_curta: "título lastreado em crédito imobiliário com garantia de hipoteca", docs_corpus: 0}
+  - {termo: "RDB", nivel: 2, categoria: renda_fixa, fonte: bcb, variantes: ["Recibo de Depósito Bancário"], explicacao_curta: "aplicação em banco parecida com o CDB, sem negociação antes do prazo", docs_corpus: 21}
+  - {termo: "RDC", nivel: 2, categoria: renda_fixa, fonte: bcb, variantes: ["Recibo de Depósito Cooperativo"], explicacao_curta: "aplicação em cooperativa de crédito, parecida com o CDB", docs_corpus: 0}
+  - {termo: "debênture", nivel: 2, categoria: renda_fixa, fonte: bcb, variantes: ["debêntures"], explicacao_curta: "título de dívida emitido por empresa para captar dinheiro", docs_corpus: 57}
+  - {termo: "dividendos", nivel: 2, categoria: renda_variavel, fonte: bcb, variantes: ["dividendo"], explicacao_curta: "parte do lucro da empresa distribuída aos acionistas", docs_corpus: 57}
+  - {termo: "commodities", nivel: 2, categoria: mercado, fonte: bcb, variantes: ["commodity"], explicacao_curta: "produtos básicos negociados em larga escala, como petróleo e soja", docs_corpus: 100}
+  - {termo: "FGC", nivel: 2, categoria: regulacao, fonte: bcb, variantes: ["Fundo Garantidor de Créditos"], explicacao_curta: "fundo que protege depósitos e aplicações até um limite se o banco quebrar", docs_corpus: 21}
+  - {termo: "FGCoop", nivel: 2, categoria: regulacao, fonte: bcb, variantes: ["Fundo Garantidor do Cooperativismo de Crédito"], explicacao_curta: "equivalente do FGC para cooperativas de crédito", docs_corpus: 1}
+  - {termo: "CMN", nivel: 2, categoria: politica_monetaria, fonte: bcb, variantes: ["Conselho Monetário Nacional"], explicacao_curta: "órgão que define a meta de inflação e as regras do sistema financeiro", docs_corpus: 138}
+  - {termo: "SFN", nivel: 2, categoria: regulacao, fonte: bcb, variantes: ["Sistema Financeiro Nacional"], explicacao_curta: "conjunto de instituições e órgãos que regulam e operam o dinheiro no país", docs_corpus: 52}
+  - {termo: "IGP-M", nivel: 2, categoria: indices, fonte: bcb, variantes: ["IGPM"], explicacao_curta: "índice de preços usado em reajuste de aluguéis e contratos", docs_corpus: 20}
+  - {termo: "INPC", nivel: 2, categoria: indices, fonte: bcb, explicacao_curta: "índice de inflação para famílias de renda mais baixa", docs_corpus: 24}
+  - {termo: "INCC", nivel: 2, categoria: indices, fonte: bcb, explicacao_curta: "índice que mede a variação do custo da construção", docs_corpus: 4}
+  - {termo: "TR", nivel: 2, categoria: indices, fonte: bcb, variantes: ["Taxa Referencial"], explicacao_curta: "taxa de referência usada na poupança e em financiamentos", docs_corpus: 10}
+  - {termo: "IOF", nivel: 2, categoria: tributos, fonte: bcb, variantes: ["Imposto sobre Operações Financeiras"], explicacao_curta: "imposto cobrado sobre crédito, câmbio, seguros e outras operações", docs_corpus: 16}
+  - {termo: "alíquota", nivel: 2, categoria: tributos, fonte: bcb, variantes: ["alíquotas"], explicacao_curta: "percentual aplicado para calcular um imposto", docs_corpus: 32}
+
+  # ---------- Banco Central: crédito e dívida ----------
+  - {termo: "crédito", nivel: 1, categoria: credito, fonte: bcb, explicacao_curta: "dinheiro ou prazo para pagar que se recebe agora", docs_corpus: 108}
+  - {termo: "empréstimo", nivel: 1, categoria: credito, fonte: bcb, variantes: ["empréstimos"], explicacao_curta: "dinheiro recebido que deve ser devolvido com juros", docs_corpus: 60}
+  - {termo: "financiamento", nivel: 1, categoria: credito, fonte: bcb, variantes: ["financiamentos"], explicacao_curta: "crédito para comprar um bem, pago em parcelas", docs_corpus: 61}
+  - {termo: "crédito consignado", nivel: 1, categoria: credito, fonte: bcb, variantes: ["empréstimo consignado", "consignado"], explicacao_curta: "empréstimo com parcela descontada direto do salário ou benefício", docs_corpus: 52}
+  - {termo: "margem consignável", nivel: 2, categoria: credito, fonte: bcb, explicacao_curta: "parte da renda que pode ser comprometida com consignado", docs_corpus: 6}
+  - {termo: "empréstimo pessoal", nivel: 1, categoria: credito, fonte: bcb, explicacao_curta: "empréstimo sem garantia, para qualquer uso", docs_corpus: 0}
+  - {termo: "cartão de crédito", nivel: 1, categoria: credito, fonte: bcb, explicacao_curta: "cartão para pagar agora e quitar a fatura depois", docs_corpus: 50}
+  - {termo: "cartão de débito", nivel: 1, categoria: bancario, fonte: bcb, explicacao_curta: "cartão que desconta o valor direto da conta", docs_corpus: 10}
+  - {termo: "crédito rotativo", nivel: 2, categoria: credito, fonte: bcb, variantes: ["rotativo do cartão"], explicacao_curta: "crédito automático quando se paga menos que o total da fatura, com juros altos", docs_corpus: 22}
+  - {termo: "pagamento mínimo", nivel: 1, categoria: credito, fonte: bcb, explicacao_curta: "menor valor aceito da fatura do cartão", docs_corpus: 1}
+  - {termo: "cheque especial", nivel: 1, categoria: credito, fonte: bcb, explicacao_curta: "limite que o banco libera quando a conta fica negativa", docs_corpus: 39}
+  - {termo: "crédito pré-aprovado", nivel: 1, categoria: credito, fonte: bcb, explicacao_curta: "limite de crédito já liberado pelo banco ao cliente", docs_corpus: 0}
+  - {termo: "linha de crédito", nivel: 2, categoria: credito, fonte: bcb, explicacao_curta: "tipo de crédito oferecido, com regras e taxas próprias", docs_corpus: 9}
+  - {termo: "operação de crédito", nivel: 2, categoria: credito, fonte: bcb, explicacao_curta: "contrato em que alguém empresta dinheiro a outro", docs_corpus: 18}
+  - {termo: "portabilidade de crédito", nivel: 2, categoria: credito, fonte: bcb, explicacao_curta: "transferir uma dívida para outro banco com juros melhores", docs_corpus: 1}
+  - {termo: "CET", nivel: 2, categoria: credito, fonte: bcb, variantes: ["custo efetivo total", "Custo Efetivo Total"], explicacao_curta: "custo total do crédito, somando juros, tarifas e impostos", docs_corpus: 0}
+  - {termo: "dívida", nivel: 1, categoria: credito, fonte: bcb, variantes: ["dívidas"], explicacao_curta: "valor que se deve a alguém", docs_corpus: 103}
+  - {termo: "inadimplência", nivel: 1, categoria: credito, fonte: bcb, variantes: ["inadimplente", "inadimplentes"], explicacao_curta: "atraso ou falta de pagamento de uma dívida", docs_corpus: 60}
+  - {termo: "negativado", nivel: 1, categoria: credito, fonte: bcb, variantes: ["negativação", "nome sujo"], explicacao_curta: "pessoa com dívida em atraso registrada em cadastro de devedores", docs_corpus: 0}
+  - {termo: "renegociação", nivel: 1, categoria: credito, fonte: bcb, variantes: ["renegociar"], explicacao_curta: "novo acordo para pagar uma dívida com condições diferentes", docs_corpus: 15}
+  - {termo: "mora", nivel: 2, categoria: credito, fonte: bcb, explicacao_curta: "atraso no pagamento, que gera juros e multa", docs_corpus: 1}
+  - {termo: "taxa de permanência", nivel: 2, categoria: credito, fonte: bcb, variantes: ["comissão de permanência"], explicacao_curta: "cobrança por dívida em atraso, no lugar de juros e multa do contrato", docs_corpus: 0}
+  - {termo: "saldo devedor", nivel: 2, categoria: credito, fonte: bcb, explicacao_curta: "valor que ainda falta pagar de uma dívida", docs_corpus: 23}
+  - {termo: "amortização", nivel: 2, categoria: credito, fonte: bcb, variantes: ["amortizar"], explicacao_curta: "pagamento que reduz o valor principal da dívida", docs_corpus: 41}
+  - {termo: "valor amortizado", nivel: 2, categoria: credito, fonte: bcb, explicacao_curta: "parte do principal da dívida que já foi abatida", docs_corpus: 1}
+  - {termo: "principal", nivel: 2, categoria: credito, fonte: bcb, ambiguo: true, explicacao_curta: "valor original de uma dívida, sem os juros", docs_corpus: 82}
+  - {termo: "SAC", nivel: 2, categoria: credito, fonte: bcb, variantes: ["Sistema de Amortização Constante"], explicacao_curta: "financiamento com amortização fixa e parcelas que diminuem", docs_corpus: 22}
+  - {termo: "tabela Price", nivel: 2, categoria: credito, fonte: bcb, variantes: ["PRICE", "Tabela Price"], explicacao_curta: "financiamento com parcelas de valor igual do início ao fim", docs_corpus: 3}
+  - {termo: "encargo", nivel: 2, categoria: credito, fonte: bcb, variantes: ["encargos"], explicacao_curta: "custo extra de um contrato, como juros, multas e tarifas", docs_corpus: 34}
+  - {termo: "garantia", nivel: 1, categoria: credito, fonte: bcb, variantes: ["garantias"], explicacao_curta: "bem ou compromisso que protege quem empresta", docs_corpus: 64}
+  - {termo: "alienação fiduciária", nivel: 2, categoria: credito, fonte: bcb, explicacao_curta: "o bem financiado fica em nome do credor até a dívida ser quitada", docs_corpus: 3}
+  - {termo: "hipoteca", nivel: 2, categoria: credito, fonte: bcb, explicacao_curta: "garantia em imóvel que continua em nome do devedor", docs_corpus: 2}
+  - {termo: "aval", nivel: 2, categoria: credito, fonte: bcb, explicacao_curta: "promessa de pagar a dívida de outra pessoa se ela não pagar", docs_corpus: 3}
+  - {termo: "carta de crédito", nivel: 2, categoria: credito, fonte: bcb, explicacao_curta: "valor liberado para comprar um bem, comum em consórcio", docs_corpus: 0}
+  - {termo: "credor", nivel: 1, categoria: credito, fonte: bcb, explicacao_curta: "quem tem dinheiro a receber", docs_corpus: 8}
+  - {termo: "devedor", nivel: 1, categoria: credito, fonte: bcb, explicacao_curta: "quem tem dinheiro a pagar", docs_corpus: 32}
+  - {termo: "mútuo", nivel: 2, categoria: credito, fonte: bcb, variantes: ["mutuante", "mutuário"], explicacao_curta: "empréstimo de coisa que se devolve em quantidade igual, como dinheiro", docs_corpus: 6}
+  - {termo: "arrendamento mercantil", nivel: 2, categoria: credito, fonte: bcb, variantes: ["leasing"], explicacao_curta: "aluguel de um bem com opção de compra no fim", docs_corpus: 29}
+  - {termo: "financeira", nivel: 2, categoria: regulacao, fonte: bcb, ambiguo: true, variantes: ["SCFI", "sociedade de crédito, financiamento e investimento"], explicacao_curta: "instituição que oferece crédito ao consumidor", docs_corpus: 91}
+  - {termo: "SCR", nivel: 2, categoria: regulacao, fonte: bcb, variantes: ["Sistema de Informações de Crédito"], explicacao_curta: "base do BC com informações sobre dívidas e operações de crédito", docs_corpus: 29}
+  - {termo: "CCS", nivel: 2, categoria: regulacao, fonte: bcb, variantes: ["Cadastro de Clientes do SFN"], explicacao_curta: "cadastro que informa onde o cliente tem conta ou relacionamento", docs_corpus: 0}
+  - {termo: "Cadin", nivel: 2, categoria: regulacao, fonte: bcb, variantes: ["CADIN"], explicacao_curta: "cadastro de quem deve ao setor público federal", docs_corpus: 0}
+  - {termo: "CCF", nivel: 2, categoria: regulacao, fonte: bcb, explicacao_curta: "cadastro de quem emitiu cheque sem fundos", docs_corpus: 1}
+  - {termo: "cadastro positivo", nivel: 1, categoria: credito, fonte: bcb, explicacao_curta: "histórico de bom pagador, que ajuda a conseguir crédito", docs_corpus: 0}
+  - {termo: "cadastro restritivo", nivel: 1, categoria: credito, fonte: bcb, variantes: ["cadastros restritivos", "restrição cadastral"], explicacao_curta: "registro de dívidas em atraso que dificulta novo crédito", docs_corpus: 0}
+
+  # ---------- Banco Central: conta, pagamentos e documentos ----------
+  - {termo: "conta-corrente", nivel: 1, categoria: bancario, fonte: bcb, variantes: ["conta corrente"], explicacao_curta: "conta para movimentar o dinheiro do dia a dia", docs_corpus: 26}
+  - {termo: "conta inativa", nivel: 1, categoria: bancario, fonte: bcb, explicacao_curta: "conta sem movimentação por um período", docs_corpus: 0}
+  - {termo: "correntista", nivel: 1, categoria: bancario, fonte: bcb, explicacao_curta: "dono de uma conta-corrente", docs_corpus: 0}
+  - {termo: "extrato", nivel: 1, categoria: bancario, fonte: bcb, explicacao_curta: "lista de entradas e saídas de uma conta", docs_corpus: 4}
+  - {termo: "saldo disponível", nivel: 1, categoria: bancario, fonte: bcb, explicacao_curta: "dinheiro da conta que pode ser usado agora", docs_corpus: 0}
+  - {termo: "saldo provisionado", nivel: 2, categoria: bancario, fonte: bcb, explicacao_curta: "valor reservado para uma operação ainda não concluída", docs_corpus: 0}
+  - {termo: "lançamentos futuros", nivel: 1, categoria: bancario, fonte: bcb, explicacao_curta: "operações agendadas que ainda vão afetar a conta", docs_corpus: 1}
+  - {termo: "débito automático", nivel: 1, categoria: bancario, fonte: bcb, explicacao_curta: "pagamento de contas descontado sozinho da conta", docs_corpus: 1}
+  - {termo: "tarifa bancária", nivel: 1, categoria: bancario, fonte: bcb, variantes: ["tarifas bancárias"], explicacao_curta: "valor cobrado pelo banco por serviços", docs_corpus: 9}
+  - {termo: "pacote de serviços", nivel: 1, categoria: bancario, fonte: bcb, explicacao_curta: "conjunto de serviços bancários cobrado por mensalidade", docs_corpus: 1}
+  - {termo: "tarifa de adiantamento a depositante", nivel: 2, categoria: bancario, fonte: bcb, explicacao_curta: "tarifa cobrada quando a conta fica negativa sem limite contratado", docs_corpus: 0}
+  - {termo: "Pix", nivel: 1, categoria: pagamentos, fonte: bcb, variantes: ["PIX"], explicacao_curta: "pagamento e transferência instantâneos, 24 horas por dia", docs_corpus: 14}
+  - {termo: "Pix automático", nivel: 1, categoria: pagamentos, fonte: bcb, explicacao_curta: "cobrança recorrente via Pix, autorizada uma vez", docs_corpus: 0}
+  - {termo: "meio de pagamento", nivel: 1, categoria: pagamentos, fonte: bcb, variantes: ["meios de pagamento"], explicacao_curta: "forma de pagar, como cartão, Pix, boleto ou dinheiro", docs_corpus: 11}
+  - {termo: "boleto", nivel: 1, categoria: pagamentos, fonte: bcb, explicacao_curta: "documento para pagar uma cobrança em banco ou aplicativo", docs_corpus: 5}
+  - {termo: "carnê", nivel: 1, categoria: pagamentos, fonte: bcb, explicacao_curta: "conjunto de boletos para pagamento parcelado", docs_corpus: 0}
+  - {termo: "cheque", nivel: 1, categoria: pagamentos, fonte: bcb, explicacao_curta: "ordem de pagamento escrita contra o saldo da conta", docs_corpus: 39}
+  - {termo: "cheque pré-datado", nivel: 1, categoria: pagamentos, fonte: bcb, explicacao_curta: "cheque com data combinada para ser depositado", docs_corpus: 0}
+  - {termo: "duplicata", nivel: 2, categoria: pagamentos, fonte: bcb, explicacao_curta: "título que registra uma venda a prazo", docs_corpus: 1}
+  - {termo: "nota promissória", nivel: 2, categoria: pagamentos, fonte: bcb, explicacao_curta: "documento em que alguém promete pagar uma quantia em data definida", docs_corpus: 1}
+  - {termo: "sacado", nivel: 2, categoria: pagamentos, fonte: bcb, variantes: ["pagador"], explicacao_curta: "quem deve pagar um título ou cheque", docs_corpus: 16}
+  - {termo: "sacador", nivel: 2, categoria: pagamentos, fonte: bcb, explicacao_curta: "quem emite o título ou a ordem de pagamento", docs_corpus: 0}
+  - {termo: "cedente", nivel: 2, categoria: pagamentos, fonte: bcb, variantes: ["beneficiário"], explicacao_curta: "quem tem o direito de receber o valor do título", docs_corpus: 9}
+  - {termo: "à vista", nivel: 1, categoria: pagamentos, fonte: bcb, variantes: ["a vista"], explicacao_curta: "pagamento feito de uma vez, na hora", docs_corpus: 50}
+  - {termo: "a prazo", nivel: 1, categoria: pagamentos, fonte: bcb, variantes: ["parcelado"], explicacao_curta: "pagamento dividido ou feito depois da compra", docs_corpus: 40}
+  - {termo: "espécie", nivel: 1, categoria: pagamentos, fonte: bcb, variantes: ["dinheiro em espécie"], explicacao_curta: "dinheiro vivo, em notas e moedas", docs_corpus: 17}
+  - {termo: "internet banking", nivel: 1, categoria: bancario, fonte: bcb, variantes: ["home banking", "banco on-line"], explicacao_curta: "serviços do banco usados pela internet", docs_corpus: 0}
+  - {termo: "negociação", nivel: 1, categoria: credito, fonte: bcb, ambiguo: true, explicacao_curta: "conversa para ajustar valor, prazo ou condição", docs_corpus: 45}
+  - {termo: "no vermelho", nivel: 1, categoria: bancario, fonte: bcb, variantes: ["no azul"], explicacao_curta: "conta com saldo negativo (no azul, positivo)", docs_corpus: 0}
+  - {termo: "anuidade", nivel: 1, categoria: bancario, fonte: bcb, explicacao_curta: "valor cobrado por ano pelo uso de um cartão", docs_corpus: 0}
+  - {termo: "multa", nivel: 1, categoria: credito, fonte: bcb, explicacao_curta: "penalidade em dinheiro por descumprir o contrato", docs_corpus: 11}
+  - {termo: "indenização", nivel: 1, categoria: seguros, fonte: bcb, explicacao_curta: "valor pago para compensar um prejuízo", docs_corpus: 4}
+
+  # ---------- Banco Central: pessoas, renda e contas ----------
+  - {termo: "pessoa física", nivel: 1, categoria: geral, fonte: bcb, variantes: ["PF", "pessoas físicas"], explicacao_curta: "pessoa como indivíduo, sem empresa", docs_corpus: 69}
+  - {termo: "pessoa jurídica", nivel: 1, categoria: geral, fonte: bcb, variantes: ["PJ", "pessoas jurídicas"], explicacao_curta: "empresa ou organização com CNPJ", docs_corpus: 61}
+  - {termo: "MEI", nivel: 1, categoria: geral, fonte: bcb, variantes: ["microempreendedor individual"], explicacao_curta: "pequeno empresário individual com regras e impostos simplificados", docs_corpus: 3}
+  - {termo: "renda bruta", nivel: 1, categoria: contabilidade, fonte: bcb, explicacao_curta: "ganho total antes de descontos", docs_corpus: 5}
+  - {termo: "renda líquida", nivel: 1, categoria: contabilidade, fonte: bcb, explicacao_curta: "o que sobra depois dos descontos", docs_corpus: 0}
+  - {termo: "receita", nivel: 1, categoria: contabilidade, fonte: bcb, variantes: ["receitas"], explicacao_curta: "dinheiro que entra", docs_corpus: 60}
+  - {termo: "despesa", nivel: 1, categoria: contabilidade, fonte: bcb, variantes: ["despesas"], explicacao_curta: "dinheiro que sai", docs_corpus: 63}
+  - {termo: "reajuste", nivel: 1, categoria: indices, fonte: bcb, explicacao_curta: "atualização de um valor, geralmente por um índice", docs_corpus: 35}
+  - {termo: "liquidação", nivel: 2, categoria: mercado, fonte: bcb, ambiguo: true, explicacao_curta: "conclusão de uma operação, com o pagamento e a entrega", docs_corpus: 57}
+
+  # ---------- Banco Central: seguros ----------
+  - {termo: "seguro", nivel: 1, categoria: seguros, fonte: bcb, variantes: ["seguros"], explicacao_curta: "proteção contra prejuízos em troca de um pagamento", docs_corpus: 58}
+  - {termo: "seguradora", nivel: 1, categoria: seguros, fonte: bcb, explicacao_curta: "empresa que vende seguros", docs_corpus: 2}
+  - {termo: "segurado", nivel: 1, categoria: seguros, fonte: bcb, explicacao_curta: "pessoa protegida pelo seguro", docs_corpus: 1}
+  - {termo: "apólice", nivel: 2, categoria: seguros, fonte: bcb, explicacao_curta: "contrato do seguro, com coberturas e condições", docs_corpus: 1}
+  - {termo: "prêmio", nivel: 2, categoria: seguros, fonte: bcb, ambiguo: true, explicacao_curta: "valor pago pelo seguro", docs_corpus: 78}
+  - {termo: "sinistro", nivel: 2, categoria: seguros, fonte: bcb, explicacao_curta: "evento coberto pelo seguro, como batida ou roubo", docs_corpus: 0}
+
+  # ---------- Banco Central: consórcio ----------
+  - {termo: "consórcio", nivel: 1, categoria: consorcio, fonte: bcb, variantes: ["consorciado"], explicacao_curta: "grupo que junta dinheiro para comprar bens por sorteio ou lance", docs_corpus: 7}
+  - {termo: "contemplação", nivel: 2, categoria: consorcio, fonte: bcb, ambiguo: true, explicacao_curta: "quando o consorciado ganha direito ao bem", docs_corpus: 0}
+  - {termo: "lance", nivel: 2, categoria: consorcio, fonte: bcb, ambiguo: true, variantes: ["lance embutido"], explicacao_curta: "oferta de valor para ser contemplado antes", docs_corpus: 2}
+  - {termo: "cota de consórcio", nivel: 2, categoria: consorcio, fonte: bcb, variantes: ["cota"], explicacao_curta: "participação de um consorciado no grupo", docs_corpus: 11}
+  - {termo: "fundo comum", nivel: 2, categoria: consorcio, fonte: bcb, explicacao_curta: "dinheiro do grupo usado para pagar as cartas de crédito", docs_corpus: 0}
+  - {termo: "fundo de reserva", nivel: 2, categoria: consorcio, fonte: bcb, explicacao_curta: "valor guardado para cobrir imprevistos do grupo", docs_corpus: 0}
+  - {termo: "franquia de consórcio", nivel: 2, categoria: consorcio, fonte: bcb, explicacao_curta: "valor cobrado no consórcio quando há desistência ou atraso", docs_corpus: 0}
+  - {termo: "contribuição do consórcio", nivel: 2, categoria: consorcio, fonte: bcb, explicacao_curta: "parcela mensal paga pelo consorciado", docs_corpus: 0}
+  - {termo: "recurso não procurado", nivel: 2, categoria: consorcio, fonte: bcb, explicacao_curta: "dinheiro de consórcio que o dono não resgatou", docs_corpus: 0}
+  - {termo: "fungível", nivel: 2, categoria: geral, fonte: bcb, variantes: ["bens fungíveis"], explicacao_curta: "que pode ser trocado por outro igual, como dinheiro", docs_corpus: 0}
+
+  # ---------- CVM ----------
+  - {termo: "CVM", nivel: 1, categoria: regulacao, fonte: cvm, variantes: ["Comissão de Valores Mobiliários"], explicacao_curta: "órgão que fiscaliza o mercado de capitais", docs_corpus: 28}
+  - {termo: "mercado de capitais", nivel: 2, categoria: mercado, fonte: cvm, explicacao_curta: "mercado em que empresas captam dinheiro direto de investidores", docs_corpus: 67}
+  - {termo: "valores mobiliários", nivel: 2, categoria: mercado, fonte: cvm, variantes: ["valor mobiliário"], explicacao_curta: "papéis como ações e debêntures que representam investimento", docs_corpus: 29}
+  - {termo: "oferta pública", nivel: 2, categoria: mercado, fonte: cvm, variantes: ["ofertas públicas"], explicacao_curta: "venda de valores mobiliários ao público em geral", docs_corpus: 14}
+  - {termo: "companhia aberta", nivel: 2, categoria: mercado, fonte: cvm, variantes: ["companhias abertas"], explicacao_curta: "empresa com valores negociados no mercado, sujeita às regras da CVM", docs_corpus: 8}
+  - {termo: "emissor", nivel: 2, categoria: mercado, fonte: cvm, variantes: ["emissores"], explicacao_curta: "quem emite valores mobiliários para captar dinheiro", docs_corpus: 27}
+  - {termo: "suitability", nivel: 2, categoria: regulacao, fonte: cvm, variantes: ["adequação do investimento ao perfil"], explicacao_curta: "análise de se o produto combina com o perfil do cliente", docs_corpus: 4}
+  - {termo: "prospecto", nivel: 2, categoria: mercado, fonte: cvm, explicacao_curta: "documento com as informações de uma oferta de valores mobiliários", docs_corpus: 6}
+  - {termo: "FIAGRO", nivel: 2, categoria: renda_variavel, fonte: cvm, variantes: ["Fiagro"], explicacao_curta: "fundo que investe em negócios ligados ao agronegócio", docs_corpus: 2}
+  - {termo: "resolução CVM", nivel: 2, categoria: regulacao, fonte: cvm, variantes: ["Resolução CVM"], explicacao_curta: "norma editada pela CVM", docs_corpus: 13}
+  - {termo: "consulta pública", nivel: 2, categoria: regulacao, fonte: cvm, explicacao_curta: "etapa em que o regulador recebe opiniões antes de decidir", docs_corpus: 3}
+  - {termo: "agenda regulatória", nivel: 3, categoria: regulacao, fonte: cvm, explicacao_curta: "lista de temas que o regulador pretende normatizar", docs_corpus: 2}
+  - {termo: "termo de compromisso", nivel: 3, categoria: regulacao, fonte: cvm, variantes: ["TC"], explicacao_curta: "acordo para encerrar processo sem condenação, com obrigações", docs_corpus: 29}
+  - {termo: "processo administrativo sancionador", nivel: 3, categoria: regulacao, fonte: cvm, variantes: ["PAS"], explicacao_curta: "processo da CVM para apurar e punir infrações", docs_corpus: 8}
+  - {termo: "ofício circular", nivel: 3, categoria: regulacao, fonte: cvm, variantes: ["OC"], explicacao_curta: "orientação da CVM enviada a vários participantes do mercado", docs_corpus: 1}
+  - {termo: "ofício de alerta", nivel: 3, categoria: regulacao, fonte: cvm, explicacao_curta: "aviso da CVM sobre risco ou irregularidade", docs_corpus: 0}
+  - {termo: "ato declaratório", nivel: 3, categoria: regulacao, fonte: cvm, explicacao_curta: "ato que autoriza ou reconhece algo, como o exercício de uma atividade", docs_corpus: 0}
+  - {termo: "reunião do colegiado", nivel: 3, categoria: regulacao, fonte: cvm, explicacao_curta: "reunião dos diretores da CVM para decidir", docs_corpus: 0}
+  - {termo: "stop order", nivel: 3, categoria: regulacao, fonte: cvm, explicacao_curta: "ordem que suspende uma oferta ou atividade no mercado", docs_corpus: 0}
+
+  # ---------- B3 (página A-Agressão do glossário) ----------
+  - {termo: "ação ordinária", nivel: 2, categoria: renda_variavel, fonte: b3, variantes: ["ações ordinárias", "ON"], explicacao_curta: "ação que dá direito a voto", docs_corpus: 1}
+  - {termo: "ação preferencial", nivel: 2, categoria: renda_variavel, fonte: b3, variantes: ["ações preferenciais", "PN"], explicacao_curta: "ação com preferência em dividendos, em geral sem voto", docs_corpus: 1}
+  - {termo: "acionista", nivel: 1, categoria: renda_variavel, fonte: b3, variantes: ["acionistas"], explicacao_curta: "dono de ações de uma empresa", docs_corpus: 23}
+  - {termo: "acionista controlador", nivel: 2, categoria: renda_variavel, fonte: b3, variantes: ["controlador"], explicacao_curta: "acionista com poder de decidir os rumos da empresa", docs_corpus: 6}
+  - {termo: "acionista minoritário", nivel: 2, categoria: renda_variavel, fonte: b3, variantes: ["minoritários"], explicacao_curta: "acionista sem poder de controle", docs_corpus: 0}
+  - {termo: "ações em circulação", nivel: 2, categoria: renda_variavel, fonte: b3, variantes: ["free float"], explicacao_curta: "ações disponíveis para negociação no mercado", docs_corpus: 2}
+  - {termo: "ação em tesouraria", nivel: 2, categoria: renda_variavel, fonte: b3, variantes: ["ações em tesouraria"], explicacao_curta: "ação da própria empresa recomprada por ela", docs_corpus: 0}
+  - {termo: "ADR", nivel: 2, categoria: renda_variavel, fonte: b3, variantes: ["American Depositary Receipt"], explicacao_curta: "recibo que representa ações de empresa estrangeira negociado nos EUA", docs_corpus: 0}
+  - {termo: "after market", nivel: 3, categoria: renda_variavel, fonte: b3, explicacao_curta: "negociação fora do horário normal do pregão", docs_corpus: 0}
+  - {termo: "agência de classificação de risco", nivel: 2, categoria: mercado, fonte: b3, variantes: ["rating", "agência de rating"], explicacao_curta: "empresa que dá nota à capacidade de pagamento de quem emite dívida", docs_corpus: 22}
+  - {termo: "agente fiduciário", nivel: 2, categoria: mercado, fonte: b3, explicacao_curta: "quem defende os interesses de quem compra títulos de dívida", docs_corpus: 2}
+  - {termo: "agente autônomo de investimento", nivel: 2, categoria: mercado, fonte: b3, variantes: ["AAI"], explicacao_curta: "profissional que oferece investimentos em nome de uma corretora", docs_corpus: 0}
+  - {termo: "administração ativa", nivel: 2, categoria: investimentos, fonte: b3, explicacao_curta: "gestão que escolhe ativos para tentar superar o mercado", docs_corpus: 0}
+  - {termo: "administração passiva", nivel: 2, categoria: investimentos, fonte: b3, explicacao_curta: "gestão que copia um índice de mercado", docs_corpus: 0}
+  - {termo: "agência de fomento", nivel: 2, categoria: regulacao, fonte: b3, explicacao_curta: "instituição pública que financia projetos de desenvolvimento", docs_corpus: 0}
+  - {termo: "ACC", nivel: 3, categoria: cambio, fonte: b3, variantes: ["adiantamento sobre contrato de câmbio"], explicacao_curta: "crédito antecipado a exportador com base em contrato de câmbio", docs_corpus: 14}
+  - {termo: "ACE", nivel: 3, categoria: cambio, fonte: b3, variantes: ["adiantamento sobre cambiais entregues"], explicacao_curta: "crédito ao exportador após embarque da mercadoria", docs_corpus: 2}
+  - {termo: "renda fixa", nivel: 1, categoria: renda_fixa, fonte: b3, explicacao_curta: "investimento com regra de remuneração definida", docs_corpus: 31}
+  - {termo: "renda variável", nivel: 1, categoria: renda_variavel, fonte: b3, explicacao_curta: "investimento cujo retorno muda com o mercado", docs_corpus: 6}
+
+  # ---------- Macroeconomia: vocabulário que o leitor de mercado já conhece (nível 2) ----------
+  - {termo: "política monetária", nivel: 2, categoria: politica_monetaria, fonte: corpus, explicacao_curta: "ações do Banco Central sobre juros e dinheiro em circulação", docs_corpus: 133}
+  - {termo: "política fiscal", nivel: 2, categoria: fiscal, fonte: corpus, explicacao_curta: "decisões do governo sobre gastos e impostos", docs_corpus: 68}
+  - {termo: "meta de inflação", nivel: 2, categoria: politica_monetaria, fonte: corpus, variantes: ["meta para a inflação", "metas fixadas"], explicacao_curta: "inflação que o Banco Central tem o dever de buscar", docs_corpus: 96}
+  - {termo: "expectativas de inflação", nivel: 2, categoria: politica_monetaria, fonte: corpus, variantes: ["inflação esperada"], explicacao_curta: "o que o mercado espera para a inflação futura", docs_corpus: 117}
+  - {termo: "Focus", nivel: 2, categoria: politica_monetaria, fonte: corpus, variantes: ["Relatório Focus", "pesquisa Focus"], explicacao_curta: "pesquisa semanal do BC com projeções de economistas", docs_corpus: 134}
+  - {termo: "PIB", nivel: 1, categoria: macro, fonte: corpus, variantes: ["produto interno bruto"], explicacao_curta: "valor de tudo que o país produz em um período", docs_corpus: 87}
+  - {termo: "câmbio", nivel: 1, categoria: cambio, fonte: corpus, variantes: ["taxa de câmbio"], explicacao_curta: "preço de uma moeda em outra, como o dólar em reais", docs_corpus: 145}
+  - {termo: "dólar", nivel: 1, categoria: cambio, fonte: corpus, explicacao_curta: "moeda dos Estados Unidos, referência de câmbio", docs_corpus: 55}
+  - {termo: "depreciação cambial", nivel: 2, categoria: cambio, fonte: corpus, variantes: ["depreciação do real"], explicacao_curta: "queda do valor do real frente a outras moedas", docs_corpus: 53}
+  - {termo: "reservas internacionais", nivel: 2, categoria: cambio, fonte: corpus, variantes: ["reservas"], explicacao_curta: "dólares e outros ativos em moeda estrangeira que o país guarda", docs_corpus: 137}
+  - {termo: "balança comercial", nivel: 2, categoria: macro, fonte: corpus, explicacao_curta: "diferença entre o que o país exporta e importa", docs_corpus: 32}
+  - {termo: "mercado de trabalho", nivel: 1, categoria: macro, fonte: corpus, explicacao_curta: "conjunto de empregos e pessoas que buscam trabalho", docs_corpus: 97}
+  - {termo: "taxa de desemprego", nivel: 1, categoria: macro, fonte: corpus, variantes: ["desemprego"], explicacao_curta: "parcela das pessoas que querem trabalhar e não têm emprego", docs_corpus: 103}
+  - {termo: "pleno emprego", nivel: 2, categoria: macro, fonte: corpus, explicacao_curta: "situação em que quase todos que querem trabalhar têm emprego", docs_corpus: 59}
+  - {termo: "massa salarial", nivel: 2, categoria: macro, fonte: corpus, explicacao_curta: "total pago em salários na economia", docs_corpus: 19}
+  - {termo: "dívida pública", nivel: 2, categoria: fiscal, fonte: corpus, explicacao_curta: "o que o governo deve a investidores e instituições", docs_corpus: 80}
+  - {termo: "resultado primário", nivel: 2, categoria: fiscal, fonte: corpus, variantes: ["superávit primário", "déficit primário"], explicacao_curta: "receitas menos despesas do governo, sem contar juros", docs_corpus: 36}
+  - {termo: "arcabouço fiscal", nivel: 2, categoria: fiscal, fonte: corpus, variantes: ["regra fiscal"], explicacao_curta: "regras que limitam gastos e metas das contas públicas", docs_corpus: 40}
+  - {termo: "risco fiscal", nivel: 2, categoria: fiscal, fonte: corpus, explicacao_curta: "chance de as contas públicas piorarem e pressionarem juros e câmbio", docs_corpus: 27}
+  - {termo: "estabilidade de preços", nivel: 2, categoria: politica_monetaria, fonte: corpus, explicacao_curta: "inflação baixa e previsível", docs_corpus: 66}
+  - {termo: "estabilidade financeira", nivel: 2, categoria: regulacao, fonte: corpus, explicacao_curta: "sistema financeiro funcionando sem risco de crise", docs_corpus: 65}
+  - {termo: "economias emergentes", nivel: 2, categoria: macro, fonte: corpus, variantes: ["países emergentes"], explicacao_curta: "países em desenvolvimento com mercados em expansão", docs_corpus: 121}
+  - {termo: "economias avançadas", nivel: 2, categoria: macro, fonte: corpus, explicacao_curta: "países ricos e industrializados", docs_corpus: 68}
+  - {termo: "ciclo econômico", nivel: 2, categoria: macro, fonte: corpus, explicacao_curta: "alternância entre períodos de expansão e de desaceleração", docs_corpus: 99}
+  - {termo: "convergência da inflação", nivel: 2, categoria: politica_monetaria, fonte: corpus, variantes: ["convergência"], explicacao_curta: "movimento da inflação em direção à meta", docs_corpus: 136}
+  - {termo: "projeções de inflação", nivel: 2, categoria: politica_monetaria, fonte: corpus, variantes: ["projeção de inflação"], explicacao_curta: "estimativas da inflação futura", docs_corpus: 104}
+  - {termo: "pressões inflacionárias", nivel: 2, categoria: indices, fonte: corpus, explicacao_curta: "fatores que empurram os preços para cima", docs_corpus: 46}
+  - {termo: "deflação", nivel: 2, categoria: indices, fonte: corpus, explicacao_curta: "queda geral dos preços", docs_corpus: 16}
+  - {termo: "inflação de alimentos", nivel: 2, categoria: indices, fonte: corpus, variantes: ["preços de alimentos"], explicacao_curta: "alta dos preços de comida", docs_corpus: 59}
+  - {termo: "bandeira tarifária", nivel: 2, categoria: indices, fonte: corpus, variantes: ["bandeiras tarifárias"], explicacao_curta: "cor que indica o custo extra da energia elétrica na conta", docs_corpus: 68}
+  - {termo: "concessões de crédito", nivel: 2, categoria: credito, fonte: corpus, variantes: ["concessão de crédito", "oferta de crédito"], explicacao_curta: "volume de empréstimos liberados pelos bancos", docs_corpus: 75}
+  - {termo: "volatilidade", nivel: 2, categoria: mercado, fonte: corpus, explicacao_curta: "intensidade das variações de preço de um ativo", docs_corpus: 104}
+  - {termo: "ponto percentual", nivel: 2, categoria: indices, fonte: corpus, variantes: ["pontos percentuais", "p.p."], explicacao_curta: "diferença entre duas taxas percentuais", docs_corpus: 105}
+  - {termo: "ponto-base", nivel: 2, categoria: indices, fonte: corpus, variantes: ["pontos-base", "ponto base", "bps", "bp"], explicacao_curta: "um centésimo de ponto percentual", docs_corpus: 19}
+  - {termo: "prefixado", nivel: 2, categoria: renda_fixa, fonte: corpus, variantes: ["pré-fixado", "prefixados"], explicacao_curta: "título com taxa de juros definida na compra", docs_corpus: 16}
+  - {termo: "pós-fixado", nivel: 2, categoria: renda_fixa, fonte: corpus, variantes: ["pós-fixados"], explicacao_curta: "título cujo rendimento acompanha um índice, como a Selic", docs_corpus: 6}
+  - {termo: "risco-país", nivel: 2, categoria: mercado, fonte: corpus, variantes: ["risco país", "EMBI"], explicacao_curta: "medida do risco de investir em um país", docs_corpus: 30}
+  - {termo: "Ibovespa", nivel: 1, categoria: renda_variavel, fonte: corpus, variantes: ["IBOV"], explicacao_curta: "principal índice da bolsa brasileira", docs_corpus: 24}
+  - {termo: "juros reais", nivel: 2, categoria: indices, fonte: corpus, variantes: ["juro real", "taxa de juros real"], explicacao_curta: "juros descontada a inflação", docs_corpus: 51}
+
+  # ---------- Jargão institucional do corpus (nível 3: sem verbete em glossário leigo) ----------
+  - {termo: "balanço de riscos", nivel: 3, categoria: politica_monetaria, fonte: corpus, variantes: ["riscos em ambas as direções"], explicacao_curta: "avaliação de se os riscos para a inflação pesam mais para cima ou para baixo", docs_corpus: 113}
+  - {termo: "horizonte relevante", nivel: 3, categoria: politica_monetaria, fonte: corpus, explicacao_curta: "período à frente em que a política monetária produz efeito sobre a inflação", docs_corpus: 108}
+  - {termo: "inflação subjacente", nivel: 3, categoria: indices, fonte: corpus, variantes: ["núcleo da inflação", "núcleos de inflação", "núcleos"], explicacao_curta: "medida que tira da inflação os itens mais voláteis", docs_corpus: 97}
+  - {termo: "inflação prospectiva", nivel: 3, categoria: indices, fonte: corpus, variantes: ["inflação projetada"], explicacao_curta: "inflação estimada para o período à frente", docs_corpus: 102}
+  - {termo: "inflação de serviços", nivel: 3, categoria: indices, fonte: corpus, explicacao_curta: "alta de preços de serviços, mais ligada ao mercado de trabalho", docs_corpus: 68}
+  - {termo: "inflação implícita", nivel: 3, categoria: indices, fonte: corpus, variantes: ["inflação implícita nos preços de mercado"], explicacao_curta: "inflação esperada que se deduz dos preços de títulos", docs_corpus: 9}
+  - {termo: "desinflação", nivel: 3, categoria: indices, fonte: corpus, explicacao_curta: "inflação que continua positiva, mas desacelera", docs_corpus: 74}
+  - {termo: "inércia inflacionária", nivel: 3, categoria: indices, fonte: corpus, variantes: ["inércia"], explicacao_curta: "tendência de a inflação passada se repetir via reajustes", docs_corpus: 49}
+  - {termo: "preços administrados", nivel: 3, categoria: indices, fonte: corpus, variantes: ["preços monitorados"], explicacao_curta: "preços definidos por contratos ou regulação, como energia e combustíveis", docs_corpus: 92}
+  - {termo: "bens industriais", nivel: 3, categoria: indices, fonte: corpus, explicacao_curta: "grupo de preços de produtos industrializados dentro do IPCA", docs_corpus: 62}
+  - {termo: "ancoragem das expectativas", nivel: 3, categoria: politica_monetaria, fonte: corpus, variantes: ["expectativas ancoradas"], explicacao_curta: "expectativas de inflação próximas da meta e estáveis", docs_corpus: 63}
+  - {termo: "desancoragem", nivel: 3, categoria: politica_monetaria, fonte: corpus, variantes: ["expectativas desancoradas", "desancoragem das expectativas"], explicacao_curta: "expectativas de inflação que se afastam da meta", docs_corpus: 57}
+  - {termo: "hiato do produto", nivel: 3, categoria: macro, fonte: corpus, explicacao_curta: "diferença entre o PIB efetivo e o que a economia produziria sem pressionar preços", docs_corpus: 65}
+  - {termo: "ociosidade", nivel: 3, categoria: macro, fonte: corpus, variantes: ["capacidade ociosa", "utilização da capacidade"], explicacao_curta: "parte da capacidade produtiva sem uso", docs_corpus: 98}
+  - {termo: "demanda agregada", nivel: 3, categoria: macro, fonte: corpus, explicacao_curta: "total que famílias, empresas, governo e exterior querem comprar", docs_corpus: 74}
+  - {termo: "choque de oferta", nivel: 3, categoria: macro, fonte: corpus, variantes: ["choques de oferta"], explicacao_curta: "evento que reduz a produção ou eleva custos e pressiona preços", docs_corpus: 39}
+  - {termo: "termos de troca", nivel: 3, categoria: macro, fonte: corpus, variantes: ["termo de troca"], explicacao_curta: "relação entre os preços das exportações e os das importações", docs_corpus: 17}
+  - {termo: "balanço de pagamentos", nivel: 3, categoria: macro, fonte: corpus, explicacao_curta: "registro de tudo que entra e sai do país em moeda estrangeira", docs_corpus: 35}
+  - {termo: "repasse cambial", nivel: 3, categoria: cambio, fonte: corpus, explicacao_curta: "efeito da alta do dólar sobre os preços internos", docs_corpus: 19}
+  - {termo: "taxa neutra de juros", nivel: 3, categoria: politica_monetaria, fonte: corpus, variantes: ["taxa neutra", "juro neutro", "taxa de juros neutra"], explicacao_curta: "juro que nem estimula nem freia a economia", docs_corpus: 61}
+  - {termo: "juros estrutural", nivel: 3, categoria: politica_monetaria, fonte: corpus, variantes: ["taxa de juros estrutural", "juro estrutural"], explicacao_curta: "nível de juros compatível com a economia no longo prazo", docs_corpus: 64}
+  - {termo: "taxa terminal", nivel: 3, categoria: politica_monetaria, fonte: corpus, variantes: ["juro terminal"], explicacao_curta: "nível em que se espera que o ciclo de juros termine", docs_corpus: 1}
+  - {termo: "forward guidance", nivel: 3, categoria: politica_monetaria, fonte: corpus, variantes: ["orientação prospectiva"], explicacao_curta: "sinalização do Banco Central sobre os próximos passos", docs_corpus: 15}
+  - {termo: "projeções condicionais", nivel: 3, categoria: politica_monetaria, fonte: corpus, explicacao_curta: "projeções feitas sob hipóteses explícitas, como câmbio e juros do mercado", docs_corpus: 53}
+  - {termo: "cenário básico", nivel: 3, categoria: politica_monetaria, fonte: corpus, variantes: ["cenário de referência", "cenário prospectivo"], explicacao_curta: "cenário central usado pelo Copom nas projeções", docs_corpus: 120}
+  - {termo: "ciclo de aperto monetário", nivel: 3, categoria: politica_monetaria, fonte: corpus, variantes: ["aperto monetário", "ciclo de alta"], explicacao_curta: "sequência de altas de juros para conter a inflação", docs_corpus: 69}
+  - {termo: "flexibilização monetária", nivel: 3, categoria: politica_monetaria, fonte: corpus, variantes: ["afrouxamento monetário", "ciclo de queda"], explicacao_curta: "sequência de cortes de juros", docs_corpus: 46}
+  - {termo: "política monetária restritiva", nivel: 3, categoria: politica_monetaria, fonte: corpus, variantes: ["juros restritivos"], explicacao_curta: "juros altos o bastante para frear a economia", docs_corpus: 9}
+  - {termo: "condições financeiras", nivel: 3, categoria: mercado, fonte: corpus, explicacao_curta: "o quanto crédito, juros e preços de ativos facilitam ou dificultam gastar e investir", docs_corpus: 94}
+  - {termo: "preços de ativos", nivel: 3, categoria: mercado, fonte: corpus, explicacao_curta: "cotações de ações, câmbio, títulos e outros papéis", docs_corpus: 85}
+  - {termo: "prêmio de risco", nivel: 3, categoria: mercado, fonte: corpus, variantes: ["prêmios de risco"], explicacao_curta: "retorno extra exigido para assumir mais risco", docs_corpus: 105}
+  - {termo: "curva de juros", nivel: 3, categoria: renda_fixa, fonte: corpus, variantes: ["estrutura a termo"], explicacao_curta: "relação entre o prazo e a taxa de juros dos títulos", docs_corpus: 50}
+  - {termo: "curva de juros futuros", nivel: 3, categoria: renda_fixa, fonte: corpus, variantes: ["curva futura", "juros futuros", "curva DI", "contratos de DI"], explicacao_curta: "juros esperados pelo mercado para datas futuras, vistos em contratos de DI", docs_corpus: 65}
+  - {termo: "depósito compulsório", nivel: 3, categoria: politica_monetaria, fonte: corpus, variantes: ["compulsório"], explicacao_curta: "parte dos depósitos que os bancos precisam deixar no BC", docs_corpus: 29}
+  - {termo: "mercado aberto", nivel: 3, categoria: politica_monetaria, fonte: corpus, variantes: ["operações compromissadas", "open market"], explicacao_curta: "compra e venda de títulos públicos pelo BC para ajustar os juros", docs_corpus: 139}
+  - {termo: "swap cambial", nivel: 3, categoria: cambio, fonte: corpus, variantes: ["swaps cambiais"], explicacao_curta: "contrato em que o BC troca exposição ao câmbio por juros", docs_corpus: 9}
+  - {termo: "regulação prudencial", nivel: 3, categoria: regulacao, fonte: corpus, explicacao_curta: "regras para que os bancos tenham capital e liquidez para resistir a crises", docs_corpus: 50}
+  - {termo: "capital regulatório", nivel: 3, categoria: regulacao, fonte: corpus, explicacao_curta: "capital mínimo que as regras exigem de um banco", docs_corpus: 20}
+  - {termo: "índice de Basileia", nivel: 3, categoria: regulacao, fonte: mercado, variantes: ["Basileia", "índice de capital"], explicacao_curta: "relação entre o capital do banco e seus riscos", docs_corpus: 20}
+  - {termo: "crédito direcionado", nivel: 3, categoria: credito, fonte: corpus, explicacao_curta: "crédito com juros e destino definidos por regras do governo", docs_corpus: 65}
+  - {termo: "NTN-B", nivel: 3, categoria: renda_fixa, fonte: mercado, variantes: ["Tesouro IPCA+", "Tesouro IPCA"], explicacao_curta: "título do Tesouro que paga inflação mais uma taxa fixa", docs_corpus: 17}
+  - {termo: "LFT", nivel: 3, categoria: renda_fixa, fonte: mercado, variantes: ["Tesouro Selic"], explicacao_curta: "título do Tesouro que acompanha a Selic", docs_corpus: 9}
+  - {termo: "LTN", nivel: 3, categoria: renda_fixa, fonte: mercado, variantes: ["Tesouro Prefixado"], explicacao_curta: "título do Tesouro com taxa fixa definida na compra", docs_corpus: 11}
+  - {termo: "CDS", nivel: 3, categoria: mercado, fonte: mercado, variantes: ["credit default swap"], explicacao_curta: "seguro negociado contra o calote de uma dívida", docs_corpus: 26}
+  - {termo: "benchmark", nivel: 3, categoria: investimentos, fonte: mercado, explicacao_curta: "índice usado como referência para comparar um investimento", docs_corpus: 5}
+
+  # ---------- Balanços e releases de empresas ----------
+  - {termo: "lucro líquido", nivel: 1, categoria: contabilidade, fonte: mercado, explicacao_curta: "o que sobra da receita depois de todos os custos e impostos", docs_corpus: 31}
+  - {termo: "receita líquida", nivel: 2, categoria: contabilidade, fonte: mercado, explicacao_curta: "vendas menos deduções, como impostos sobre vendas", docs_corpus: 23}
+  - {termo: "margem líquida", nivel: 2, categoria: contabilidade, fonte: mercado, explicacao_curta: "parte da receita que vira lucro", docs_corpus: 14}
+  - {termo: "balanço patrimonial", nivel: 2, categoria: contabilidade, fonte: mercado, variantes: ["balanço"], explicacao_curta: "retrato do que a empresa tem e deve", docs_corpus: 139}
+  - {termo: "DRE", nivel: 2, categoria: contabilidade, fonte: mercado, variantes: ["demonstração do resultado do exercício"], explicacao_curta: "relatório de receitas, custos e lucro em um período", docs_corpus: 0}
+  - {termo: "fluxo de caixa", nivel: 2, categoria: contabilidade, fonte: mercado, explicacao_curta: "entradas e saídas de dinheiro da empresa", docs_corpus: 26}
+  - {termo: "fluxo de caixa livre", nivel: 3, categoria: contabilidade, fonte: mercado, variantes: ["FCF", "geração de caixa"], explicacao_curta: "caixa que sobra depois de despesas e investimentos", docs_corpus: 6}
+  - {termo: "capital de giro", nivel: 2, categoria: contabilidade, fonte: mercado, explicacao_curta: "dinheiro para tocar o dia a dia da empresa", docs_corpus: 34}
+  - {termo: "provisão", nivel: 2, categoria: contabilidade, fonte: mercado, ambiguo: true, variantes: ["provisões"], explicacao_curta: "valor reservado para uma perda ou despesa provável", docs_corpus: 45}
+  - {termo: "EBITDA", nivel: 3, categoria: contabilidade, fonte: mercado, variantes: ["Ebitda"], explicacao_curta: "lucro operacional antes de juros, impostos, depreciação e amortização", docs_corpus: 25}
+  - {termo: "EBITDA ajustado", nivel: 3, categoria: contabilidade, fonte: mercado, variantes: ["Ebitda ajustado"], explicacao_curta: "EBITDA sem itens extraordinários", docs_corpus: 2}
+  - {termo: "margem EBITDA", nivel: 3, categoria: contabilidade, fonte: mercado, variantes: ["margem Ebitda"], explicacao_curta: "EBITDA como percentual da receita", docs_corpus: 0}
+  - {termo: "lucro por ação", nivel: 2, categoria: renda_variavel, fonte: mercado, variantes: ["LPA"], explicacao_curta: "lucro dividido pelo número de ações", docs_corpus: 0}
+  - {termo: "preço sobre lucro", nivel: 3, categoria: renda_variavel, fonte: mercado, variantes: ["P/L"], explicacao_curta: "preço da ação dividido pelo lucro por ação", docs_corpus: 0}
+  - {termo: "ROE", nivel: 3, categoria: contabilidade, fonte: mercado, variantes: ["retorno sobre o patrimônio líquido"], explicacao_curta: "lucro em relação ao patrimônio dos acionistas", docs_corpus: 20}
+  - {termo: "ROIC", nivel: 3, categoria: contabilidade, fonte: mercado, variantes: ["retorno sobre o capital investido"], explicacao_curta: "retorno sobre todo o capital investido na empresa", docs_corpus: 0}
+  - {termo: "payout", nivel: 2, categoria: renda_variavel, fonte: mercado, variantes: ["Payout"], explicacao_curta: "parcela do lucro distribuída aos acionistas", docs_corpus: 1}
+  - {termo: "dividend yield", nivel: 3, categoria: renda_variavel, fonte: mercado, variantes: ["Dividend Yield"], explicacao_curta: "dividendos pagos em relação ao preço da ação", docs_corpus: 1}
+  - {termo: "juros sobre capital próprio", nivel: 3, categoria: renda_variavel, fonte: mercado, variantes: ["JCP"], explicacao_curta: "forma de remunerar acionistas com benefício fiscal para a empresa", docs_corpus: 17}
+  - {termo: "dívida líquida", nivel: 2, categoria: contabilidade, fonte: mercado, explicacao_curta: "dívida total menos o caixa da empresa", docs_corpus: 42}
+  - {termo: "alavancagem", nivel: 3, categoria: contabilidade, fonte: mercado, variantes: ["dívida líquida/EBITDA"], explicacao_curta: "uso de dívida para financiar a empresa, medido pela dívida sobre o EBITDA", docs_corpus: 24}
+  - {termo: "covenants", nivel: 3, categoria: credito, fonte: mercado, variantes: ["covenant"], explicacao_curta: "condições financeiras que a empresa deve cumprir num contrato de dívida", docs_corpus: 1}
+  - {termo: "capex", nivel: 3, categoria: contabilidade, fonte: mercado, variantes: ["CAPEX", "Capex"], explicacao_curta: "investimento em máquinas, obras e outros bens duráveis", docs_corpus: 2}
+  - {termo: "impairment", nivel: 3, categoria: contabilidade, fonte: mercado, explicacao_curta: "reconhecimento de que um ativo vale menos que o registrado", docs_corpus: 1}
+  - {termo: "guidance", nivel: 3, categoria: mercado, fonte: mercado, variantes: ["projeções da empresa"], explicacao_curta: "projeções que a própria empresa divulga ao mercado", docs_corpus: 32}
+  - {termo: "valuation", nivel: 3, categoria: mercado, fonte: mercado, variantes: ["avaliação de empresa"], explicacao_curta: "estimativa do valor de uma empresa", docs_corpus: 0}
+  - {termo: "valor de mercado", nivel: 2, categoria: mercado, fonte: mercado, variantes: ["market cap", "capitalização de mercado"], explicacao_curta: "preço da ação vezes o total de ações", docs_corpus: 23}
+  - {termo: "fato relevante", nivel: 2, categoria: regulacao, fonte: mercado, explicacao_curta: "informação que pode mudar o preço dos papéis e deve ser divulgada", docs_corpus: 6}
+  - {termo: "comunicado ao mercado", nivel: 2, categoria: regulacao, fonte: mercado, explicacao_curta: "aviso público da empresa a investidores", docs_corpus: 4}
+  - {termo: "release de resultados", nivel: 2, categoria: mercado, fonte: mercado, variantes: ["release"], explicacao_curta: "resumo divulgado pela empresa com os resultados do período", docs_corpus: 3}
+  - {termo: "recuperação judicial", nivel: 2, categoria: regulacao, fonte: mercado, explicacao_curta: "processo para a empresa em crise renegociar dívidas sob supervisão da Justiça", docs_corpus: 24}
+  - {termo: "IPO", nivel: 2, categoria: mercado, fonte: mercado, variantes: ["oferta pública inicial", "abertura de capital"], explicacao_curta: "primeira venda de ações de uma empresa ao público", docs_corpus: 4}
+  - {termo: "follow-on", nivel: 3, categoria: mercado, fonte: mercado, variantes: ["oferta subsequente"], explicacao_curta: "nova oferta de ações de empresa que já está na bolsa", docs_corpus: 1}
+  - {termo: "bookbuilding", nivel: 3, categoria: mercado, fonte: mercado, explicacao_curta: "coleta de ordens de investidores para definir o preço de uma oferta", docs_corpus: 1}
+  - {termo: "desdobramento de ações", nivel: 2, categoria: renda_variavel, fonte: mercado, variantes: ["split", "desdobramento"], explicacao_curta: "divisão das ações em mais unidades, sem mudar o valor total", docs_corpus: 2}
+  - {termo: "bonificação em ações", nivel: 2, categoria: renda_variavel, fonte: mercado, variantes: ["bonificação"], explicacao_curta: "ações novas dadas aos acionistas sem custo", docs_corpus: 1}
+
+  # ---------- Bancos ----------
+  - {termo: "spread bancário", nivel: 2, categoria: credito, fonte: mercado, variantes: ["spread", "spreads bancários"], explicacao_curta: "diferença entre o juro que o banco cobra e o que paga para captar", docs_corpus: 34}
+  - {termo: "carteira de crédito", nivel: 2, categoria: credito, fonte: mercado, explicacao_curta: "total de empréstimos concedidos por um banco", docs_corpus: 41}
+  - {termo: "provisão para devedores duvidosos", nivel: 3, categoria: credito, fonte: mercado, variantes: ["PDD"], explicacao_curta: "reserva do banco para possíveis calotes", docs_corpus: 0}
+  - {termo: "custo de crédito", nivel: 3, categoria: credito, fonte: mercado, explicacao_curta: "despesa do banco com inadimplência da carteira", docs_corpus: 15}
+  - {termo: "margem financeira líquida", nivel: 3, categoria: credito, fonte: mercado, variantes: ["NIM"], explicacao_curta: "ganho do banco com juros, depois do custo de captar dinheiro", docs_corpus: 6}
+  - {termo: "índice de eficiência", nivel: 3, categoria: contabilidade, fonte: mercado, explicacao_curta: "despesas do banco em relação às receitas", docs_corpus: 8}
