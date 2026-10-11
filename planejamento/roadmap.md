@@ -367,15 +367,15 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 - [ ] 7. Calibrar limiares com textos de referência
 - [x] 8. Cobertura da âncora (anti-trivialização)
 - [x] 9. Detecção de linguagem de recomendação
-- [ ] 10. Juiz LLM com rubrica estruturada
-- [ ] 11. Classificador cego da matriz de confusão
+- [x] 10. Juiz LLM com rubrica estruturada
+- [x] 11. Classificador cego da matriz de confusão
 
 ### Fase 2: Ingestão
-- [ ] 12. Adaptador de PDF com limites e checagem de documento financeiro
-- [ ] 13. Adaptador de link restrito aos domínios permitidos
-- [ ] 14. Adaptador de termo com normalização
-- [ ] 15. Registro de proveniência (URL, data, hash)
-- [ ] 16. Schema da âncora e o Extrator
+- [x] 12. Adaptador de PDF com limites e checagem de documento financeiro
+- [x] 13. Adaptador de link restrito aos domínios permitidos
+- [x] 14. Adaptador de termo com normalização
+- [x] 15. Registro de proveniência (URL, data, hash)
+- [x] 16. Schema da âncora e o Extrator
 
 ### Fase 3: Geração
 - [ ] 17. Schemas JSON dos três formatos
@@ -439,7 +439,8 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 | PLN | spaCy + Pyphen | Lematização do glossário; sílabas do Flesch PT-BR |
 | PDF | pdfplumber (PyMuPDF como alternativa) | Tabelas de releases |
 | Renderização | Jinja2 + Playwright | Template HTML único do carrossel |
-| Extrator e gerador | Claude Sonnet 5.5 (`claude-sonnet-5-5`) | Haiku 5.5 como opção barata a medir na Fase 6 |
-| Juiz | Groq, `openai/gpt-oss-120b` | Família diferente do gerador; aceita JSON Schema estrito. Conferir o ID na documentação da Groq ao implementar |
+| Extrator | Groq, `openai/gpt-oss-120b` | Sem custo de API; schema estrito. Claude Sonnet 5.5 fica como melhoria opcional |
+| Gerador | Google, `gemini-3.5-flash-lite` | Plano gratuito; família diferente do juiz (Google x OpenAI); respondeu em 2 s com bom português. Reserva: Groq `qwen/qwen3.8-27b`. `gemini-3.8-flash` é melhor, porém 10x mais lento |
+| Juiz | Groq, `openai/gpt-oss-120b` | Família diferente do gerador. IDs conferidos na conta em 2026-10-09; a lista da Groq muda |
 
 Modelo, prompt e versão do glossário ficam registrados em cada versão gerada, e os experimentos de uma comparação usam os mesmos modelos. Chaves de API ficam em variável de ambiente, fora do repositório.
