@@ -50,8 +50,19 @@ def test_schema_sem_referencias_nem_limites():
 
 def test_cliente_groq_exige_chave(monkeypatch):
     monkeypatch.delenv("GROQ_API_KEY", raising=False)
+    monkeypatch.setattr(juiz, "ler_env", lambda nome: None)   # ignora um .env real da máquina
     with pytest.raises(RuntimeError):
         juiz.ClienteGroq()
+
+
+def test_ler_env_do_arquivo(monkeypatch, tmp_path):
+    monkeypatch.delenv("CHAVE_TESTE", raising=False)
+    arq = tmp_path / ".env"
+    arq.write_text('OUTRA=1\nCHAVE_TESTE="abc123"\n', encoding="utf-8")
+    assert juiz.ler_env("CHAVE_TESTE", arq) == "abc123"
+    assert juiz.ler_env("AUSENTE", arq) is None
+    monkeypatch.setenv("CHAVE_TESTE", "do_ambiente")
+    assert juiz.ler_env("CHAVE_TESTE", arq) == "do_ambiente"
 
 
 def test_classificador_llm_cego():
@@ -80,3 +91,35 @@ def test_classificador_por_regras():
     assert classificador.classificar_por_regras(facil, idx) == "iniciante"
     assert classificador.classificar_por_regras(medio, idx) == "intermediario"
     assert classificador.classificar_por_regras(dificil, idx) == "avancado"
+
+
+def test_prompt_do_juiz_aceita_consequencia_geral_mas_nao_fato_novo():
+    assert "consequência econômica geral" in juiz.SISTEMA_JUIZ
+    assert "número, data, nome, decisão" in juiz.SISTEMA_JUIZ
+
+
+def test_retry_espera_e_repete_em_429(monkeypatch):
+    import httpx
+    respostas = [httpx.Response(429, headers={"retry-after": "3"}, request=httpx.Request("POST", "https://x")),
+                 httpx.Response(503, request=httpx.Request("POST", "https://x")),
+                 httpx.Response(200, json={"ok": 1}, request=httpx.Request("POST", "https://x"))]
+    monkeypatch.setattr(httpx, "post", lambda *a, **k: respostas.pop(0))
+    esperas = []
+    r = juiz.post_com_retry("https://x", {}, {}, dormir=esperas.append)
+    assert r.json() == {"ok": 1} and esperas == [3.5, 4.5]
+
+
+def test_retry_desiste_depois_das_tentativas(monkeypatch):
+    import httpx
+    monkeypatch.setattr(httpx, "post", lambda *a, **k: httpx.Response(429, request=httpx.Request("POST", "https://x")))
+    with pytest.raises(httpx.HTTPStatusError):
+        juiz.post_com_retry("https://x", {}, {}, tentativas=3, dormir=lambda s: None)
+
+
+def test_erro_de_cliente_nao_repete(monkeypatch):
+    import httpx
+    chamadas = []
+    monkeypatch.setattr(httpx, "post", lambda *a, **k: chamadas.append(1) or httpx.Response(401, request=httpx.Request("POST", "https://x")))
+    with pytest.raises(httpx.HTTPStatusError):
+        juiz.post_com_retry("https://x", {}, {}, dormir=lambda s: None)
+    assert len(chamadas) == 1
