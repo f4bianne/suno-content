@@ -9,3 +9,4 @@ beautifulsoup4>=4.12
 langgraph>=1.0
 fastapi>=0.110
 uvicorn>=0.29
+sqlalchemy>=2.0

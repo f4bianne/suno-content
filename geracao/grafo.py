@@ -37,6 +37,9 @@ class EstadoGrafo(TypedDict, total=False):
 
 class Processamento(BaseModel):
     gerado_em: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    execucao_id: str | None = None          # preenchido ao salvar no banco
+    do_cache: bool = False                  # True quando o resultado veio do banco, sem chamar modelos
+    config: dict[str, Any] = {}             # modelos, prompts, glossario e codigo usados (ver armazenamento/versoes.py)
     documento_chave: str
     origem: str
     url: str | None
