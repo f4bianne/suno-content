@@ -16,6 +16,8 @@ _MARCADORES_FRASE = re.compile(
     r"é como|é a mesma coisa que|imagine|pense em|significa|chamad[oa]|conhecid[oa] como)\b",
     re.IGNORECASE,
 )
+# Logo antes do termo: "a taxa chamada Selic", "conhecido como Copom".
+_LOGO_ANTES = re.compile(r"(chamad[oa]s?|conhecid[oa]s? como|denominad[oa]s?|sigla|sigla de)\s*$", re.IGNORECASE)
 # Logo depois do termo: "(definição)", "— definição", ", que é ...", ", ou seja ...".
 _LOGO_APOS = re.compile(r"^\s*(\(|—|–| - |,\s*(que|ou seja|isto é|a|o)\b|\s+é\s+(a|o|um|uma)\b)", re.IGNORECASE)
 
@@ -105,7 +107,7 @@ def _limites_sentencas(texto: str) -> list[tuple[int, int]]:
 
 def explicado(o: Ocorrencia, texto: str, limites: list[tuple[int, int]] | None = None) -> bool:
     """O termo vem com explicação: marcador logo depois, ou marcador na mesma frase ou na anterior."""
-    if _LOGO_APOS.match(texto[o.fim:o.fim + 40]):
+    if _LOGO_APOS.match(texto[o.fim:o.fim + 40]) or _LOGO_ANTES.search(texto[max(0, o.inicio - 25):o.inicio]):
         return True
     limites = limites if limites is not None else _limites_sentencas(texto)
     for k, (i, f) in enumerate(limites):
@@ -121,13 +123,19 @@ def violacoes(texto: str, indice: Indice, maximo_sem_explicacao: int, maximo_com
     - nível do termo > maximo_com_explicacao: proibido, mesmo explicado;
     - nível do termo > maximo_sem_explicacao: aceito só com explicação.
 
-    Uma explicação vale para o termo daí em diante (inclusive para sinônimos dele); só as
-    ocorrências anteriores à primeira explicação são violações.
+    Uma explicação vale para o termo daí em diante (inclusive para sinônimos dele). Uma menção
+    sem explicação é perdoada se a explicação vem logo depois (até 250 caracteres), como em
+    "O Copom decidiu... O Copom é o comitê que...". Menções antes disso são violações.
     """
     limites = _limites_sentencas(texto)
     achadas = []
     ja_explicados: set[str] = set()
-    for o in indice.encontrar(texto):
+    ocorrencias = indice.encontrar(texto)
+    explicadas_em = {}   # termo -> posições das ocorrências explicadas
+    for oc in ocorrencias:
+        if explicado(oc, texto, limites):
+            explicadas_em.setdefault(oc.termo.termo, []).append(oc.inicio)
+    for o in ocorrencias:
         n = o.termo.nivel
         if n <= maximo_sem_explicacao:
             continue
@@ -136,7 +144,8 @@ def violacoes(texto: str, indice: Indice, maximo_sem_explicacao: int, maximo_com
             achadas.append(Violacao(o.termo.termo, n, "proibido", trecho))
         elif explicado(o, texto, limites):
             ja_explicados.add(o.termo.termo)
-        elif o.termo.termo not in ja_explicados:
+        elif o.termo.termo not in ja_explicados and not any(
+                0 < p - o.fim <= 250 for p in explicadas_em.get(o.termo.termo, [])):
             achadas.append(Violacao(o.termo.termo, n, "sem explicacao", trecho))
     return achadas
 

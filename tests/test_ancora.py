@@ -53,3 +53,14 @@ def test_cobertura_completa_e_parcial():
 def test_fato_sem_numero_nem_entidade_vai_para_o_juiz():
     c = cobertura("Nada relevante.", Ancora(fatos=[Fato(id="x", texto="Algo")]))
     assert c.indeterminados == ["x"] and c.fracao == 1.0
+
+
+def test_fato_com_numero_nao_exige_a_entidade():
+    texto = "A inflação em 12 meses foi de 5,06%."   # diz "inflação", não "IPCA"
+    assert cobertura(texto, ancora()).presentes == ["f2"]
+
+
+def test_fato_sem_numero_exige_as_entidades():
+    a = Ancora(fatos=[Fato(id="x", texto="Fato", entidades=["Copom", "Selic"])])
+    assert cobertura("O Copom decidiu.", a).ausentes == ["x"]
+    assert cobertura("O Copom manteve a Selic.", a).presentes == ["x"]

@@ -83,7 +83,7 @@ class Cobertura:
 
 
 def cobertura(texto: str, ancora: Ancora) -> Cobertura:
-    """Fração dos fatos decidíveis cujos números e entidades-chave aparecem no texto."""
+    """Fração dos fatos decidíveis presentes no texto (pelos números ou, sem números, pelas entidades)."""
     no_texto = {round(v, 6) for v in numeros_em(texto)}
     minusculo = texto.lower()
     presentes, ausentes, indeterminados = [], [], []
@@ -92,8 +92,12 @@ def cobertura(texto: str, ancora: Ancora) -> Cobertura:
         if not nums and not f.entidades:
             indeterminados.append(f.id)
             continue
-        ok_nums = all(round(v, 6) in no_texto for v in nums)
-        ok_ent = all(e.lower() in minusculo for e in f.entidades)
-        (presentes if ok_nums and ok_ent else ausentes).append(f.id)
+        # Com número, o número decide (o texto pode dizer "inflação" em vez de "IPCA").
+        # Sem número, as entidades-chave precisam aparecer.
+        if nums:
+            ok = all(round(v, 6) in no_texto for v in nums)
+        else:
+            ok = all(e.lower() in minusculo for e in f.entidades)
+        (presentes if ok else ausentes).append(f.id)
     decididos = len(presentes) + len(ausentes)
     return Cobertura(len(presentes) / decididos if decididos else 1.0, presentes, ausentes, indeterminados)

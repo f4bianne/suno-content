@@ -74,3 +74,17 @@ def test_densidade(indice):
     d = glossario.densidade("A Selic e o IPCA subiram. O hiato do produto fechou.", indice)
     assert d["contagem"][2] == 2 and d["contagem"][3] == 1
     assert d["nivel23_por_100_palavras"] > 0
+
+
+def test_explicacao_logo_depois_perdoa_a_primeira_mencao(indice):
+    texto = "O Copom decidiu elevar a Selic. A Selic é a taxa básica de juros da economia."
+    assert [v.termo for v in glossario.violacoes(texto, indice, 1, 2)] == ["Copom"]   # só o Copom segue sem explicação
+
+
+def test_explicacao_muito_longe_nao_perdoa(indice):
+    texto = "A Selic subiu. " + "Os preços ficaram estáveis no mercado de bairro e na feira. " * 12 + "A Selic é a taxa básica de juros."
+    assert any(v.termo == "Selic" for v in glossario.violacoes(texto, indice, 1, 2))
+
+
+def test_chamada_antes_do_termo_conta_como_explicacao(indice):
+    assert glossario.violacoes("Subiu a taxa básica de juros, chamada Selic, para 14,25%.", indice, 1, 2) == []
