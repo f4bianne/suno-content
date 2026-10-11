@@ -385,9 +385,9 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 - [x] 19. Feedback injetado, máximo de tentativas, bloqueio, retry por ramo e histórico de tentativas
 
 ### Fase 5: Cache, atualização e versões
-- [ ] 20. Armazenamento compartilhado com separação entre resultados públicos e de sessão
-- [ ] 21. Monitor das fontes que detecta documentos novos e dispara a geração
-- [ ] 22. Histórico de versões com identificação completa
+- [x] 20. Armazenamento compartilhado com separação entre resultados públicos e de sessão
+- [x] 21. Monitor das fontes que detecta documentos novos e dispara a geração
+- [x] 22. Histórico de versões com identificação completa
 
 ### Fase 6: Experimentos
 - [ ] 23. Matriz de confusão (geral, por formato, antes e depois do loop)
@@ -435,7 +435,7 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 |---|---|---|
 | Orquestração | LangGraph + Pydantic | 9 ramos paralelos, roteamento condicional e retry por ramo; Pydantic para âncora, formatos e saída do Juiz |
 | API e interface | FastAPI (SSE) + React/Vite/TS | Progresso ramo a ramo |
-| Banco | PostgreSQL | Versões, cache e histórico |
+| Banco | SQLite via SQLAlchemy (PostgreSQL por troca da URL) | Versões, cache e histórico sem instalar servidor |
 | PLN | spaCy + Pyphen | Lematização do glossário; sílabas do Flesch PT-BR |
 | PDF | pdfplumber (PyMuPDF como alternativa) | Tabelas de releases |
 | Renderização | Jinja2 + Playwright | Template HTML único do carrossel |
