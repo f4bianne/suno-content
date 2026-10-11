@@ -42,8 +42,11 @@ def texto_corrido(conteudo: Conteudo) -> str:
 
 
 def unidades_flesch(conteudo: Conteudo) -> list[str] | None:
-    """Em carrossel, cada slide é uma sentença. Nos demais, a divisão é automática."""
-    return list(conteudo.slides) if isinstance(conteudo, Carrossel) else None
+    """Em carrossel, cada slide do corpo é uma sentença; gancho e conclusão ficam de fora porque são curtos por
+    natureza e inflariam o índice. Nos demais formatos, a divisão em sentenças é automática."""
+    if not isinstance(conteudo, Carrossel):
+        return None
+    return list(conteudo.slides[1:-1]) if len(conteudo.slides) >= 3 else list(conteudo.slides)
 
 
 def verificar(conteudo: Conteudo, cfg: dict) -> list[str]:

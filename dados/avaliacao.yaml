@@ -5,16 +5,19 @@
 
 niveis:
   iniciante:
+    flesch_video: [60, 100]
     flesch: [60, 100]   # hipótese: o glossário leigo do BC tem mediana 41, então 60 é meta do gerador, não observação
     cobertura_minima: 0.80
     nivel_maximo_termo_sem_explicacao: 1   # nível 2 só com explicação; nível 3 proibido
     nivel_maximo_termo_com_explicacao: 2
   intermediario:
+    flesch_video: [40, 70]   # a fala tem frases curtas por natureza; 3 de 3 vídeos de teste passaram de 60
     flesch: [40, 60]   # hipótese
     cobertura_minima: 0.80
     nivel_maximo_termo_sem_explicacao: 2   # nível 3 só com explicação
     nivel_maximo_termo_com_explicacao: 3
   avancado:
+    flesch_video: [0, 60]   # idem: vídeos avançados gerados ficaram entre 52 e 60
     flesch: [0, 50]   # calibrado: atas, relatórios e normas têm mediana 30-45 e P90 de 54-55; [0, 40] reprovaria metade deles
     cobertura_minima: 0.90
     nivel_maximo_termo_sem_explicacao: 3
@@ -30,10 +33,13 @@ numeros:
 
 formatos:
   artigo:
-    palavras: [400, 1200]
+    max_fatos: 12
+    palavras: [250, 900]   # hipótese: documentos curtos (atas) não sustentam 400+ palavras sem enchimento
   carrossel:
+    max_fatos: 8        # nem todo fato central cabe em um formato curto; o gerador recebe só os primeiros
     slides: [5, 10]
     caracteres_por_slide: 220
   video:
+    max_fatos: 5
     duracao_maxima_s: 60
     palavras_por_segundo: 2.5

@@ -68,6 +68,18 @@ def test_carrossel_usa_slide_como_sentenca(indice):
     assert r.metricas["formato"] == "carrossel" and "flesch" in r.metricas
 
 
+def test_video_usa_faixa_propria_de_legibilidade(indice):
+    from avaliador.formatos import Cena, Roteiro
+    cfg = carregar_config()
+    assert cfg["niveis"]["avancado"]["flesch_video"][1] > cfg["niveis"]["avancado"]["flesch"][1]
+    fala = ("O Copom elevou a Selic a 14,25% ao ano, decisão compatível com a convergência da inflação para o redor da meta. "
+            "A inflação medida pelo IPCA alcançou 5,06% no acumulado de doze meses, mantendo o balanço de riscos assimétrico. "
+            "A desancoragem das expectativas sustenta uma política monetária restritiva.")
+    r = Roteiro(cenas=[Cena(inicio_s=0, fim_s=20, fala=fala, visual="gráfico")])
+    res = avaliar(r, "avancado", indice, ancora(), cfg)
+    assert 50 < res.metricas["flesch"] <= 60 and not [f for f in res.falhas if f.metrica == "legibilidade"]
+
+
 def test_nivel_invalido(indice):
     with pytest.raises(ValueError):
         avaliar(artigo("x"), "expert", indice, None, CFG)

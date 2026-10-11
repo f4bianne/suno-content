@@ -57,7 +57,8 @@ def avaliar(conteudo: formatos.Conteudo, nivel: str, indice: glossario.Indice,
         falhas.append(Falha("legibilidade", "texto vazio"))
     else:
         metricas["flesch"] = round(leg.flesch, 1)
-        lo, hi = regras["flesch"]
+        # A fala de vídeo tem frases curtas por natureza e ganha uma faixa própria.
+        lo, hi = regras.get(f"flesch_{metricas['formato']}", regras["flesch"])
         # A escala é de 0 a 100; textos muito simples passam de 100, o que não é defeito.
         if not lo <= max(0.0, min(100.0, leg.flesch)) <= hi:
             falhas.append(Falha("legibilidade", f"Flesch {leg.flesch:.1f} fora da faixa {lo} a {hi}"))
@@ -87,6 +88,7 @@ def avaliar(conteudo: formatos.Conteudo, nivel: str, indice: glossario.Indice,
         metricas["numeros_arredondados"] = res.arredondados
         cob = anc.cobertura(texto, ancora)
         metricas["cobertura"] = round(cob.fracao, 3)
+        metricas["fatos_ausentes"] = cob.ausentes
         indeterminados = cob.indeterminados
         if cob.fracao < regras["cobertura_minima"]:
             falhas.append(Falha("cobertura", f"cobertura {cob.fracao:.0%} abaixo de {regras['cobertura_minima']:.0%}; ausentes: {', '.join(cob.ausentes)}"))

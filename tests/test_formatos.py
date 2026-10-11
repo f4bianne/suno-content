@@ -28,7 +28,7 @@ def test_carrossel_limites():
 def test_carrossel_valido_e_flesch_por_slide():
     c = Carrossel(slides=[f"Slide número {i} curto" for i in range(6)])
     assert verificar(c, CFG) == []
-    assert unidades_flesch(c) == c.slides
+    assert unidades_flesch(c) == c.slides[1:-1]   # gancho e conclusão ficam de fora
 
 
 def test_video_acima_de_60s():

@@ -13,7 +13,8 @@ def nomes(indice, texto):
 
 
 def test_acha_termo_e_variante(indice):
-    assert "Selic" in nomes(indice, "A taxa básica de juros subiu.")
+    assert "Selic" in nomes(indice, "A taxa Selic subiu.")
+    assert "Selic" not in nomes(indice, "A taxa básica de juros subiu.")   # descrição simples não é jargão
     assert "IPCA" in nomes(indice, "O IPCA fechou o mês em alta.")
 
 
