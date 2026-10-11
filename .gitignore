@@ -4,3 +4,4 @@ dados/corpus/
 __pycache__/
 .pytest_cache/
 .env
+dados/saidas/
