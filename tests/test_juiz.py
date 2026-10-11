@@ -123,3 +123,22 @@ def test_erro_de_cliente_nao_repete(monkeypatch):
     with pytest.raises(httpx.HTTPStatusError):
         juiz.post_com_retry("https://x", {}, {}, dormir=lambda s: None)
     assert len(chamadas) == 1
+
+
+def test_retry_repete_400_de_json_malformado_da_groq(monkeypatch):
+    import httpx
+    req = httpx.Request("POST", "https://x")
+    respostas = [httpx.Response(400, text='{"error":{"code":"json_validate_failed"}}', request=req),
+                 httpx.Response(200, json={"ok": 1}, request=req)]
+    monkeypatch.setattr(httpx, "post", lambda *a, **k: respostas.pop(0))
+    assert juiz.post_com_retry("https://x", {}, {}, dormir=lambda s: None).json() == {"ok": 1}
+
+
+def test_400_comum_nao_e_repetido(monkeypatch):
+    import httpx
+    chamadas = []
+    monkeypatch.setattr(httpx, "post", lambda *a, **k: chamadas.append(1) or httpx.Response(
+        400, text="schema invalido", request=httpx.Request("POST", "https://x")))
+    with pytest.raises(httpx.HTTPStatusError):
+        juiz.post_com_retry("https://x", {}, {}, dormir=lambda s: None)
+    assert len(chamadas) == 1

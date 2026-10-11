@@ -1,5 +1,6 @@
 """Adaptador de termo: normaliza o que a pessoa digitou e acha a fonte oficial (item 14)."""
 import re
+import time
 import unicodedata
 from dataclasses import dataclass
 from datetime import date
@@ -47,11 +48,16 @@ def _recente_periodico(regras: dict, cliente: httpx.Client, hoje: date) -> str |
     return None
 
 
-def _ata_recente(regras: dict, cliente: httpx.Client) -> str | None:
-    try:
-        reunioes = cliente.get(regras["api"], timeout=30).json()["conteudo"]
-    except (httpx.HTTPError, ValueError, KeyError):
-        return None
+def _ata_recente(regras: dict, cliente: httpx.Client, tentativas: int = 3, espera_s: float = 2.0) -> str | None:
+    """A API do BC às vezes demora ou cai por alguns segundos: tenta de novo antes de desistir."""
+    reunioes = None
+    for n in range(tentativas):
+        try:
+            reunioes = cliente.get(regras["api"], timeout=30).json()["conteudo"]
+            break
+        except (httpx.HTTPError, ValueError, KeyError):
+            if n < tentativas - 1:
+                time.sleep(espera_s)
     if not reunioes:
         return None
     r = max(reunioes, key=lambda x: x["nroReuniao"])

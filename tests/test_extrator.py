@@ -139,3 +139,18 @@ def test_numero_com_simbolo_mas_inexistente_continua_descartado():
     f = fato("A Selic foi a 15%", ["R$ 15"], ["Selic"], "elevou a taxa Selic para 14,25% ao ano na reunião de março")
     r = extrator.extrair_ancora(ClienteFalso([{"fatos": [f]}]), doc())
     assert r.ancora.fatos == []
+
+
+def test_pedaco_que_falha_nao_derruba_o_documento():
+    class Instavel:
+        n = 0
+
+        def completar_json(self, sistema, usuario, schema):
+            self.n += 1
+            if self.n == 1:
+                raise RuntimeError("fora do ar")
+            return {"fatos": [BOM]}
+
+    longo = TEXTO + "\n".join(f"Linha {i} de enchimento sobre juros e inflação." for i in range(400))
+    r = extrator.extrair_ancora(Instavel(), doc(longo), tamanho_pedaco=2000, max_pedacos=2)
+    assert len(r.ancora.fatos) == 1 and "pedaço do documento falhou" in r.descartados[0][0]

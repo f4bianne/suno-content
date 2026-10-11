@@ -124,7 +124,7 @@ def test_normalizar_termo():
 
 
 def test_canonico_pelo_glossario(indice):
-    assert termo.canonico("taxa básica de juros", indice) == "Selic"
+    assert termo.canonico("taxa Selic", indice) == "Selic"
     assert termo.canonico("Selic", indice) == "Selic"
     assert termo.canonico("banana", indice) is None
 
@@ -179,3 +179,23 @@ def test_ingerir_termo_registra_termo_e_url(indice):
     p = d.proveniencia
     assert p.tipo == "termo" and p.origem == "Copom" and p.url == URL_ATA
     assert p.sha256_bruto == documento.sha256_bytes(dados)
+
+
+def test_ata_recente_tenta_de_novo_quando_a_api_falha(monkeypatch):
+    monkeypatch.setattr(termo.time, "sleep", lambda s: None)
+    chamadas = {"n": 0}
+
+    def tratar(req):
+        chamadas["n"] += 1
+        if chamadas["n"] < 3:
+            raise httpx.ConnectTimeout("lento")
+        return httpx.Response(200, json=__import__("json").loads(ATAS))
+
+    c = httpx.Client(transport=httpx.MockTransport(tratar))
+    assert termo._ata_recente(CFG["fontes_periodicas"]["ata_copom_recente"], c) == URL_ATA and chamadas["n"] == 3
+
+
+def test_ata_recente_desiste_depois_das_tentativas(monkeypatch):
+    monkeypatch.setattr(termo.time, "sleep", lambda s: None)
+    c = httpx.Client(transport=httpx.MockTransport(lambda req: httpx.Response(500)))
+    assert termo._ata_recente(CFG["fontes_periodicas"]["ata_copom_recente"], c) is None

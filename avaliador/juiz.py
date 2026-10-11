@@ -87,10 +87,12 @@ def schema_plano(modelo: type[BaseModel]) -> dict:
 
 def post_com_retry(url: str, corpo: dict, cabecalhos: dict, tentativas: int = 6, espera_maxima_s: float = 60,
                    dormir=time.sleep) -> httpx.Response:
-    """POST que espera e repete em 429 (limite de requisições) e 5xx, respeitando o cabeçalho retry-after."""
+    """POST que espera e repete em 429 (limite de requisições), 5xx e 400 de JSON malformado (a Groq responde
+    json_validate_failed quando o modelo escapa do schema, de forma intermitente), respeitando retry-after."""
     for n in range(tentativas):
         r = httpx.post(url, json=corpo, headers=cabecalhos, timeout=180)
-        if r.status_code != 429 and r.status_code < 500:
+        json_ruim = r.status_code == 400 and "json_validate_failed" in r.text
+        if r.status_code != 429 and r.status_code < 500 and not json_ruim:
             r.raise_for_status()
             return r
         if n == tentativas - 1:

@@ -36,6 +36,8 @@ SISTEMA = (
     "- numeros: todos os números do fato, escritos exatamente como no documento (ex.: \"14,25\", \"5,06\");\n"
     "- entidades: instituições, índices e conceitos-chave citados (ex.: \"Copom\", \"IPCA\");\n"
     "- trecho_origem: a frase do documento que sustenta o fato, COPIADA LITERALMENTE, sem alterar uma palavra.\n"
+    "IGNORE: nomes de pessoas, listas de membros ou de votantes, datas e locais de reunião, endereços, cabeçalhos e rodapés. "
+    "Números colados a símbolos como notas de rodapé (por exemplo, o 2 de \"US$²\") não são valores: não os use.\n"
     "Se o trecho não tiver fato central, devolva a lista vazia."
 )
 
@@ -106,9 +108,13 @@ def extrair_ancora(cliente: Cliente, doc: Documento, max_fatos: int = 24, max_pe
     vistos: set[str] = set()
     res = Extracao(Ancora(fatos=[]))
     for pedaco in escolher(dividir(doc.texto, tamanho_pedaco), max_pedacos):
-        bruto = cliente.completar_json(SISTEMA, f"TRECHO DO DOCUMENTO:\n{pedaco}", schema)
         res.chamadas += 1
-        for f in LoteFatos.model_validate(bruto).fatos:
+        try:
+            lote = LoteFatos.model_validate(cliente.completar_json(SISTEMA, f"TRECHO DO DOCUMENTO:\n{pedaco}", schema))
+        except Exception as ex:   # um pedaço que falha não derruba o documento inteiro
+            res.descartados.append((f"pedaço do documento falhou ({type(ex).__name__})", pedaco[:60].replace("\n", " ")))
+            continue
+        for f in lote.fatos:
             fato, motivo = validar(f, compacto)
             if fato is None:
                 res.descartados.append((motivo, f.texto))
