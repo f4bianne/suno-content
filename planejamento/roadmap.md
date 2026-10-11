@@ -378,11 +378,11 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 - [x] 16. Schema da âncora e o Extrator
 
 ### Fase 3: Geração
-- [ ] 17. Schemas JSON dos três formatos
-- [ ] 18. Gerador parametrizado e grafo com 9 ramificações, priorizando o nível do visitante
+- [x] 17. Schemas JSON dos três formatos
+- [x] 18. Gerador parametrizado e grafo com 9 ramificações, priorizando o nível do visitante
 
 ### Fase 4: Refinement Loop
-- [ ] 19. Feedback injetado, máximo de tentativas, bloqueio, retry por ramo e histórico de tentativas
+- [x] 19. Feedback injetado, máximo de tentativas, bloqueio, retry por ramo e histórico de tentativas
 
 ### Fase 5: Cache, atualização e versões
 - [ ] 20. Armazenamento compartilhado com separação entre resultados públicos e de sessão
@@ -395,7 +395,7 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 - [ ] 25. Comparação entre configurações do sistema (modelo, prompt, glossário)
 
 ### Fase 7: Backend e interface
-- [ ] 26. FastAPI com progresso em tempo real
+- [x] 26. FastAPI com progresso em tempo real
 - [ ] 27. Matriz de saídas 3x3 com mapa de calor
 - [ ] 28. Pré-visualização, termos destacados, métricas e antes/depois do loop
 - [ ] 29. Visão do leitor com nível inferido, seletor de nível e formato, data e fonte
