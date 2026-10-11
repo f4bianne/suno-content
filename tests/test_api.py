@@ -4,6 +4,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from api.main import criar_app
+from armazenamento.repositorio import Repositorio
 from avaliador import avaliar as av
 from geracao import grafo
 from ingestao.documento import Documento, ErroIngestao, Proveniencia
@@ -30,16 +31,16 @@ def ingestor_falso(tipo, valor, nome, indice):
         raise ErroIngestao("Não há fonte oficial cadastrada para \"quebrado\".")
     origem = nome if tipo == "pdf" else valor
     return Documento(texto=TEXTO, paginas=1 if tipo == "pdf" else None,
-                     proveniencia=Proveniencia(tipo="link" if tipo == "pdf" else tipo, origem=origem, sha256_bruto="0" * 64))
+                     proveniencia=Proveniencia(tipo=tipo, origem=origem, sha256_bruto="0" * 64))
 
 
 @pytest.fixture()
-def cliente(tmp_path):
+def cliente():
     cfg = av.carregar_config()
     cfg["formatos"]["artigo"]["palavras"] = [20, 900]
     app = criar_app(
         fabrica_clientes=lambda: grafo.Clientes(extrator=ExtratorFalso(), gerador=GeradorFalso(0), juiz=JuizFalso()),
-        ingestor=ingestor_falso, pasta_saidas=tmp_path / "saidas", cfg=cfg)
+        ingestor=ingestor_falso, repositorio=Repositorio("sqlite://"), cfg=cfg)
     return TestClient(app)
 
 
@@ -66,7 +67,7 @@ def test_historico_lista_e_abre_a_execucao(cliente):
     esperar(cliente, cliente.post("/api/jobs", json={"tipo": "termo", "valor": "Copom"}).json()["id"])
     lista = cliente.get("/api/execucoes").json()
     assert len(lista) == 1 and lista[0]["ramos"] == 9 and lista[0]["aprovados"] == 9 and lista[0]["origem"] == "Copom"
-    d = cliente.get(f"/api/execucoes/{lista[0]['chave']}").json()
+    d = cliente.get(f"/api/execucoes/{lista[0]['id']}").json()
     assert len(d["ramos"]) == 9 and "gerado_em" in d
 
 
@@ -122,13 +123,11 @@ def test_config_expoe_limiares(cliente):
     assert c["niveis"] == ["iniciante", "intermediario", "avancado"] and "flesch" in c["limiares"]["iniciante"]
 
 
-def test_sem_chave_o_job_falha_com_mensagem_clara(tmp_path, monkeypatch):
-    from api import main
-
+def test_sem_chave_o_job_falha_com_mensagem_clara():
     def sem_chave():
         raise RuntimeError("defina GROQ_API_KEY no ambiente")
 
-    app = criar_app(fabrica_clientes=sem_chave, ingestor=ingestor_falso, pasta_saidas=tmp_path)
+    app = criar_app(fabrica_clientes=sem_chave, ingestor=ingestor_falso, repositorio=Repositorio("sqlite://"))
     c = TestClient(app)
     j = esperar(c, c.post("/api/jobs", json={"tipo": "termo", "valor": "Copom"}).json()["id"])
     assert j["status"] == "erro" and "GROQ_API_KEY" in j["erro"]
@@ -140,3 +139,29 @@ def test_execucoes_do_mesmo_documento_nao_se_sobrescrevem(cliente):
     esperar(cliente, cliente.post("/api/jobs", json={"tipo": "termo", "valor": "Copom"}).json()["id"])
     lista = cliente.get("/api/execucoes").json()
     assert len(lista) == 2 and {x["ramos"] for x in lista} == {1, 9}
+
+
+def test_segundo_pedido_igual_sai_do_cache(cliente):
+    a = esperar(cliente, cliente.post("/api/jobs", json={"tipo": "termo", "valor": "Copom"}).json()["id"])
+    b = esperar(cliente, cliente.post("/api/jobs", json={"tipo": "termo", "valor": "Copom"}).json()["id"])
+    assert a["resultado"]["do_cache"] is False and b["resultado"]["do_cache"] is True
+    assert b["resultado"]["execucao_id"] == a["resultado"]["execucao_id"]
+    assert any(e["tipo"] == "cache" for e in b["eventos"]) and not any(e["tipo"] == "gerando" for e in b["eventos"])
+    assert len(cliente.get("/api/execucoes").json()) == 1
+
+
+def test_forcar_ignora_o_cache(cliente):
+    esperar(cliente, cliente.post("/api/jobs", json={"tipo": "termo", "valor": "Copom"}).json()["id"])
+    j = esperar(cliente, cliente.post("/api/jobs", json={"tipo": "termo", "valor": "Copom", "forcar": True}).json()["id"])
+    assert j["resultado"]["do_cache"] is False and len(cliente.get("/api/execucoes").json()) == 2
+
+
+def test_pdf_so_aparece_para_a_sessao_que_enviou(cliente):
+    r = cliente.post("/api/jobs/pdf?nome=privado.pdf", content=b"%PDF-1.4 fake").json()
+    j = esperar(cliente, r["id"])
+    sessao, exec_id = r["sessao"], j["resultado"]["execucao_id"]
+    assert sessao and cliente.get("/api/execucoes").json() == []
+    assert [x["id"] for x in cliente.get(f"/api/execucoes?sessao={sessao}").json()] == [exec_id]
+    assert cliente.get(f"/api/execucoes/{exec_id}").status_code == 404
+    assert cliente.get(f"/api/execucoes/{exec_id}?sessao=outra").status_code == 404
+    assert cliente.get(f"/api/execucoes/{exec_id}?sessao={sessao}").status_code == 200

@@ -1,5 +1,8 @@
 """API: recebe termo, link ou PDF, roda o pipeline em segundo plano e expõe progresso, resultado e histórico.
 
+Os resultados ficam no banco (armazenamento/): cada geração vira uma execução versionada, e pedir de novo o
+mesmo documento com a mesma configuração devolve o resultado guardado, sem chamar os modelos.
+
 Execução: python -m uvicorn api.main:app --reload
 """
 import asyncio
@@ -9,13 +12,14 @@ import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
-from pathlib import Path
 from typing import Any, Callable, Literal
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+from armazenamento.repositorio import Repositorio
+from armazenamento.servico import processar_com_banco
 from avaliador import avaliar as av
 from avaliador import glossario
 from avaliador.juiz import ClienteGroq
@@ -25,8 +29,6 @@ from ingestao import entrada
 from ingestao.clientes import ClienteGemini
 from ingestao.documento import Documento, ErroIngestao
 
-RAIZ = Path(__file__).resolve().parent.parent
-SAIDAS = RAIZ / "dados" / "saidas"
 LIMITE_PDF = 26 * 1024 * 1024
 
 
@@ -44,12 +46,15 @@ class PedidoJob(BaseModel):
     prioritario: str | None = None
     tentativas: int = 3
     concorrencia: int = 2
+    sessao: str | None = None
+    forcar: bool = False          # ignora o cache e gera de novo
 
 
 @dataclass
 class Job:
     id: str
     entrada: dict
+    sessao: str | None = None
     status: str = "ingerindo"            # ingerindo | processando | concluido | erro
     eventos: list[dict] = field(default_factory=list)
     resultado: dict | None = None
@@ -61,15 +66,16 @@ class Job:
 
 
 def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
-              ingestor: Callable[..., Documento] | None = None, pasta_saidas: Path = SAIDAS,
+              ingestor: Callable[..., Documento] | None = None, repositorio: Repositorio | None = None,
               cfg: dict | None = None) -> FastAPI:
     app = FastAPI(title="Suno Content")
     indice = glossario.Indice(glossario.carregar())
+    repo = repositorio or Repositorio()
     jobs: dict[str, Job] = {}
     pool = ThreadPoolExecutor(max_workers=2)
     trava = threading.Lock()
 
-    def ingerir(job: Job, tipo: str, valor: Any, nome: str | None) -> Documento:
+    def ingerir(tipo: str, valor: Any, nome: str | None) -> Documento:
         if ingestor is not None:
             return ingestor(tipo, valor, nome, indice)
         if tipo == "termo":
@@ -81,23 +87,19 @@ def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
     def executar(job: Job, pedido: PedidoJob, tipo: str, valor: Any, nome: str | None) -> None:
         try:
             job.publicar({"tipo": "ingerindo"})
-            doc = ingerir(job, tipo, valor, nome)
+            doc = ingerir(tipo, valor, nome)
             p = doc.proveniencia
             job.publicar({"tipo": "documento", "origem": p.origem, "url": p.url, "palavras": len(doc.texto.split()),
                           "paginas": doc.paginas})
             job.status = "processando"
-            proc = grafo.processar(
-                doc, fabrica_clientes(), indice, cfg, niveis=tuple(pedido.niveis), formatos=tuple(pedido.formatos),
+            proc = processar_com_banco(
+                doc, fabrica_clientes(), indice, repo, cfg, niveis=tuple(pedido.niveis), formatos=tuple(pedido.formatos),
                 nivel_prioritario=pedido.prioritario, max_tentativas=pedido.tentativas, concorrencia=pedido.concorrencia,
-                observador=lambda ev: job.publicar(ev),
+                sessao=job.sessao, forcar=pedido.forcar, observador=job.publicar,
             )
-            pasta_saidas.mkdir(parents=True, exist_ok=True)
-            # Nada é substituído: cada geração vira uma execução própria (hash do documento + data e hora).
-            nome_arquivo = f"{proc.documento_chave[:12]}-{proc.gerado_em:%Y%m%d%H%M%S}"
-            (pasta_saidas / f"{nome_arquivo}.json").write_text(proc.model_dump_json(indent=2), encoding="utf-8")
             job.resultado = json.loads(proc.model_dump_json())
             job.status = "concluido"
-            job.publicar({"tipo": "fim", "chave": nome_arquivo})
+            job.publicar({"tipo": "fim", "execucao": proc.execucao_id, "do_cache": proc.do_cache})
         except ErroIngestao as e:
             job.erro, job.status = str(e), "erro"
             job.publicar({"tipo": "erro", "mensagem": job.erro})
@@ -112,11 +114,13 @@ def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
         for f in pedido.formatos:
             if f not in FORMATOS:
                 raise HTTPException(422, f"formato desconhecido: {f}")
-        job = Job(id=uuid.uuid4().hex[:10], entrada=info)
+        # PDF enviado é privado: sem sessão informada, cria-se uma e devolve-se ao chamador.
+        sessao = pedido.sessao or (uuid.uuid4().hex[:16] if tipo == "pdf" else None)
+        job = Job(id=uuid.uuid4().hex[:10], entrada=info, sessao=sessao)
         with trava:
             jobs[job.id] = job
         pool.submit(executar, job, pedido, tipo, valor, nome)
-        return {"id": job.id}
+        return {"id": job.id, "sessao": sessao}
 
     @app.post("/api/jobs")
     def criar_job(pedido: PedidoJob):
@@ -126,11 +130,13 @@ def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
 
     @app.post("/api/jobs/pdf")
     async def criar_job_pdf(request: Request, nome: str = "documento.pdf", niveis: str = ",".join(av.NIVEIS),
-                            formatos: str = ",".join(FORMATOS), prioritario: str | None = None):
+                            formatos: str = ",".join(FORMATOS), prioritario: str | None = None,
+                            sessao: str | None = None, forcar: bool = False):
         dados = await request.body()
         if len(dados) > LIMITE_PDF:
             raise HTTPException(413, "PDF grande demais")
-        pedido = PedidoJob(tipo="termo", valor="-", niveis=niveis.split(","), formatos=formatos.split(","), prioritario=prioritario)
+        pedido = PedidoJob(tipo="termo", valor="-", niveis=niveis.split(","), formatos=formatos.split(","),
+                           prioritario=prioritario, sessao=sessao, forcar=forcar)
         return abrir(pedido, "pdf", dados, nome, {"tipo": "pdf", "valor": nome})
 
     def pegar(job_id: str) -> Job:
@@ -161,24 +167,18 @@ def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
         return StreamingResponse(fluxo(), media_type="text/event-stream", headers={"Cache-Control": "no-cache"})
 
     @app.get("/api/execucoes")
-    def listar_execucoes():
-        itens = []
-        for arq in sorted(pasta_saidas.glob("*.json"), key=lambda a: a.stat().st_mtime, reverse=True):
-            try:
-                d = json.loads(arq.read_text(encoding="utf-8"))
-                status = [r["status"] for r in d["ramos"]]
-                itens.append({"chave": arq.stem, "origem": d["origem"], "url": d.get("url"), "gerado_em": d.get("gerado_em"),
-                              "ramos": len(status), "aprovados": status.count("aprovado")})
-            except (ValueError, KeyError):
-                continue
-        return itens
+    def listar_execucoes(sessao: str | None = None):
+        """Execuções públicas (fontes oficiais) e as da sessão informada."""
+        return repo.listar(sessao)
 
-    @app.get("/api/execucoes/{chave}")
-    def ver_execucao(chave: str):
-        arq = pasta_saidas / f"{Path(chave).name}.json"   # Path(...).name impede sair da pasta
-        if not arq.exists():
+    @app.get("/api/execucoes/{execucao_id}")
+    def ver_execucao(execucao_id: str, sessao: str | None = None):
+        if not repo.pode_ver(execucao_id, sessao):
             raise HTTPException(404, "execução não encontrada")
-        return json.loads(arq.read_text(encoding="utf-8"))
+        proc = repo.abrir(execucao_id)
+        if proc is None:
+            raise HTTPException(404, "execução não encontrada")
+        return json.loads(proc.model_dump_json())
 
     @app.get("/api/config")
     def configuracao():
