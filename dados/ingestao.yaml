@@ -1,0 +1,55 @@
+# Configuração da ingestão (roadmap, Fase 2).
+
+pdf:
+  tamanho_maximo_mb: 25
+  paginas_maximas: 200
+  # Checagem "é documento financeiro?": termos distintos do glossário e densidade no texto todo.
+  financeiro:
+    termos_distintos_minimos: 6
+    termos_por_100_palavras_minimo: 0.4
+
+link:
+  tamanho_maximo_mb: 25
+  redirecionamentos_maximos: 5
+  tempo_limite_s: 60
+  # Só https. `caminhos` restringe o domínio a certos prefixos de caminho (gov.br hospeda muita coisa).
+  dominios_permitidos:
+    - {dominio: bcb.gov.br}
+    - {dominio: cvm.gov.br}
+    - {dominio: gov.br, caminhos: ["/cvm", "/tesouronacional", "/fazenda"]}
+    - {dominio: tesourotransparente.gov.br}
+    - {dominio: tesouro.gov.br}
+    - {dominio: b3.com.br}
+    - {dominio: petrobras.com.br}
+    - {dominio: vale.com}
+    - {dominio: itau.com.br}
+
+# Termo -> fonte oficial. Chaves são comparadas sem acento e sem diferença de caixa.
+termos:
+  - nome: ata do Copom mais recente
+    chaves: [copom, ata, atas, ata do copom, selic, taxa selic, juros, taxa de juros, taxa basica de juros, politica monetaria, comite de politica monetaria]
+    fonte: ata_copom_recente
+  - nome: Relatório de Política Monetária mais recente
+    chaves: [inflacao, ipca, meta de inflacao, expectativas de inflacao, relatorio de inflacao, relatorio de politica monetaria, rpm, hiato do produto, cambio]
+    fonte: rpm_recente
+  - nome: Relatório de Estabilidade Financeira mais recente
+    chaves: [estabilidade financeira, relatorio de estabilidade financeira, ref, inadimplencia, basileia, credito, sistema financeiro]
+    fonte: ref_recente
+  - nome: Resolução CVM 175 (fundos de investimento)
+    chaves: [fundos, fundo de investimento, fundos de investimento, cvm 175, resolucao 175, fiagro, fii]
+    fonte: url
+    url: "https://conteudo.cvm.gov.br/export/sites/cvm/legislacao/resolucoes/anexos/100/resol175consolid_ParteGeral.pdf"
+
+fontes_periodicas:
+  ata_copom_recente:
+    api: "https://www.bcb.gov.br/api/servico/sitebcb/copom/atas?quantidade=5&filtro="
+    url: "https://www.bcb.gov.br/content/copom/atascopom/Copom{nro}-not{data}{nro}.pdf"
+  rpm_recente:
+    # Do período mais novo para o mais antigo; vale o primeiro que existir.
+    url: "https://www.bcb.gov.br/content/ri/relatorioinflacao/{ano}{mes}/rpm{ano}{mes}p.pdf"
+    meses: ["12", "09", "06", "03"]
+    anos_para_tras: 2
+  ref_recente:
+    url: "https://www.bcb.gov.br/content/publicacoes/ref/{ano}{mes}/RELESTAB{ano}{mes}-refPub.pdf"
+    meses: ["11", "10", "05", "04"]
+    anos_para_tras: 2
