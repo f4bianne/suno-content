@@ -77,6 +77,16 @@ tentativas = Table(
 )
 
 
+acessos = Table(
+    "acessos", metadata,
+    Column("id", Integer, primary_key=True, autoincrement=True),
+    Column("criado_em", DateTime(timezone=True), nullable=False),
+    Column("documento_id", Integer, ForeignKey("documentos.id"), nullable=False),
+    Column("acerto", Boolean, nullable=False),            # True = veio do cache, sem chamar modelos
+    Column("execucao_id", String(16), ForeignKey("execucoes.id"), nullable=False),
+)
+
+
 def _utc(d: datetime) -> datetime:
     return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
 
@@ -116,6 +126,20 @@ class Repositorio:
         with self.engine.connect() as c:
             return c.execute(select(func.count()).select_from(documentos).where(
                 documentos.c.url == url, documentos.c.escopo == "publico")).scalar() > 0
+
+    # ---------- acessos (taxa de acerto do cache) ----------
+
+    def registrar_acesso(self, documento_id: int, acerto: bool, execucao_id: str) -> None:
+        with self.engine.begin() as c:
+            c.execute(acessos.insert().values(criado_em=datetime.now(timezone.utc), documento_id=documento_id,
+                                              acerto=acerto, execucao_id=execucao_id))
+
+    def taxa_de_cache(self) -> tuple[int, int]:
+        """(acertos, total de pedidos) desde que os acessos passaram a ser registrados."""
+        with self.engine.connect() as c:
+            total = c.execute(select(func.count()).select_from(acessos)).scalar()
+            acertos = c.execute(select(func.count()).select_from(acessos).where(acessos.c.acerto.is_(True))).scalar()
+        return acertos, total
 
     # ---------- execucoes ----------
 

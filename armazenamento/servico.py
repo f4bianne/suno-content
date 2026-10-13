@@ -27,6 +27,7 @@ def processar_com_banco(documento: Documento, clientes: grafo.Clientes, indice: 
         if achado:
             if observador:
                 observador({"tipo": "cache", "execucao": achado})
+            repo.registrar_acesso(documento_id, True, achado)
             return repo.abrir(achado, list(niveis), list(formatos), do_cache=True)
 
     t0 = time.time()
@@ -34,4 +35,5 @@ def processar_com_banco(documento: Documento, clientes: grafo.Clientes, indice: 
                            max_tentativas=max_tentativas, concorrencia=concorrencia, observador=observador, max_fatos=max_fatos)
     proc.config = snap
     proc.execucao_id = repo.salvar_execucao(documento_id, proc, snap, h, list(niveis), list(formatos), time.time() - t0)
+    repo.registrar_acesso(documento_id, False, proc.execucao_id)
     return proc
