@@ -86,13 +86,22 @@ def schema_plano(modelo: type[BaseModel]) -> dict:
 
 
 def post_com_retry(url: str, corpo: dict, cabecalhos: dict, tentativas: int = 6, espera_maxima_s: float = 60,
-                   dormir=time.sleep) -> httpx.Response:
-    """POST que espera e repete em 429 (limite de requisições), 5xx e 400 de JSON malformado (a Groq responde
-    json_validate_failed quando o modelo escapa do schema, de forma intermitente), respeitando retry-after."""
+                   dormir=time.sleep, repeticoes_json: int = 2) -> httpx.Response:
+    """POST que espera e repete em 429 (limite de requisições) e 5xx, respeitando retry-after.
+
+    400 de JSON malformado (a Groq responde json_validate_failed quando o modelo escapa do schema) é intermitente,
+    mas não passa com espera: repete poucas vezes e logo, sem esperar minutos por algo que não é limite de uso."""
+    json_falhas = 0
     for n in range(tentativas):
         r = httpx.post(url, json=corpo, headers=cabecalhos, timeout=180)
         json_ruim = r.status_code == 400 and "json_validate_failed" in r.text
-        if r.status_code != 429 and r.status_code < 500 and not json_ruim:
+        if json_ruim:
+            json_falhas += 1
+            if json_falhas > repeticoes_json:
+                r.raise_for_status()
+            dormir(1.0)
+            continue
+        if r.status_code != 429 and r.status_code < 500:
             r.raise_for_status()
             return r
         if n == tentativas - 1:
@@ -107,6 +116,14 @@ def post_com_retry(url: str, corpo: dict, cabecalhos: dict, tentativas: int = 6,
 
 class Cliente(Protocol):
     def completar_json(self, sistema: str, usuario: str, schema: dict) -> dict: ...
+
+
+def clientes_groq() -> tuple["ClienteGroq", "ClienteGroq"]:
+    """(extrator, juiz). A Groq limita tokens por minuto POR MODELO: com `JUIZ_MODELO` o juiz usa outro modelo e
+    deixa de disputar o mesmo limite com a extração. Sem a variável, os dois usam o modelo padrão."""
+    extrator = ClienteGroq()
+    modelo = ler_env("JUIZ_MODELO")
+    return extrator, (ClienteGroq(modelo=modelo) if modelo and modelo != extrator.modelo else extrator)
 
 
 class ClienteGroq:

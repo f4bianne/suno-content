@@ -89,7 +89,9 @@ def fatos_em_texto(ancora: Ancora) -> str:
 def relatorio_de_falhas(falhas: list[str], anterior: Conteudo) -> str:
     itens = "\n".join(f"- {x}" for x in falhas)
     return (
-        "A VERSÃO ANTERIOR FOI REPROVADA PELO AVALIADOR. Corrija TODOS os problemas abaixo e reescreva por inteiro.\n"
+        "A VERSÃO ANTERIOR FOI REPROVADA PELO AVALIADOR. Corrija TODOS os problemas abaixo e reescreva por inteiro. "
+        "Mantenha o que já estava certo (fatos, números e termos já aprovados) e mude só o necessário: corrigir um "
+        "problema não pode criar outro.\n"
         f"PROBLEMAS:\n{itens}\n\nVERSÃO ANTERIOR:\n{texto_corrido(anterior)}"
     )
 

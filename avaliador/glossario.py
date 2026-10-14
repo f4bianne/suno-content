@@ -29,6 +29,7 @@ class Termo:
     categoria: str
     formas: tuple[str, ...]
     ambiguo: bool = False
+    explicacao: str = ""   # usada só para orientar a reescrita
 
 
 @dataclass(frozen=True)
@@ -57,6 +58,7 @@ def carregar(caminho: Path = CAMINHO_PADRAO) -> list[Termo]:
             categoria=t["categoria"],
             formas=tuple([t["termo"], *t.get("variantes", [])]),
             ambiguo=bool(t.get("ambiguo", False)),
+            explicacao=t.get("explicacao_curta", "") or "",
         )
         for t in dados["termos"]
     ]

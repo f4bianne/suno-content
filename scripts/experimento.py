@@ -22,7 +22,7 @@ from armazenamento import relatorios  # noqa: E402
 from armazenamento.repositorio import Repositorio  # noqa: E402
 from armazenamento.servico import processar_com_banco  # noqa: E402
 from avaliador import glossario  # noqa: E402
-from avaliador.juiz import ClienteGroq  # noqa: E402
+from avaliador.juiz import ClienteGroq, clientes_groq  # noqa: E402
 from geracao import grafo  # noqa: E402
 from ingestao import entrada  # noqa: E402
 from ingestao.clientes import ClienteGemini  # noqa: E402
@@ -41,8 +41,8 @@ SESSAO = "experimento"
 def gerar(a):
     indice = glossario.Indice(glossario.carregar())
     repo = Repositorio()
-    groq = ClienteGroq()
-    clientes = grafo.Clientes(extrator=groq, gerador=ClienteGemini(), juiz=groq)
+    extrator, juiz = clientes_groq()
+    clientes = grafo.Clientes(extrator=extrator, gerador=ClienteGemini(), juiz=juiz)
     caminhos = [Path(p) for p in (a.pdf or PADRAO)]
     faltando = [str(c) for c in caminhos if not c.exists()]
     if faltando:

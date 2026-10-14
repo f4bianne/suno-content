@@ -142,3 +142,26 @@ def test_400_comum_nao_e_repetido(monkeypatch):
     with pytest.raises(httpx.HTTPStatusError):
         juiz.post_com_retry("https://x", {}, {}, dormir=lambda s: None)
     assert len(chamadas) == 1
+
+
+def test_juiz_pode_usar_outro_modelo_da_groq(monkeypatch):
+    from avaliador.juiz import MODELO_PADRAO, clientes_groq
+    valores = {"GROQ_API_KEY": "x"}
+    monkeypatch.setattr("avaliador.juiz.ler_env", lambda nome, *a, **k: valores.get(nome))   # ignora o .env real
+    extrator, juiz = clientes_groq()
+    assert extrator.modelo == juiz.modelo == MODELO_PADRAO and extrator is juiz
+    valores["JUIZ_MODELO"] = "openai/gpt-oss-20b"
+    extrator, juiz = clientes_groq()
+    assert extrator.modelo == MODELO_PADRAO and juiz.modelo == "openai/gpt-oss-20b"
+
+
+def test_json_malformado_repete_poucas_vezes_e_sem_esperar_minutos(monkeypatch):
+    import httpx
+    req = httpx.Request("POST", "https://x")
+    chamadas, esperas = [], []
+    monkeypatch.setattr(httpx, "post", lambda *a, **k: chamadas.append(1) or httpx.Response(
+        400, text='{"error":{"code":"json_validate_failed"}}', request=req))
+    with pytest.raises(httpx.HTTPStatusError):
+        juiz.post_com_retry("https://x", {}, {}, dormir=esperas.append)
+    assert len(chamadas) == 3            # a original e 2 repeticoes
+    assert sum(esperas) <= 2.0           # espera curta, não os minutos do limite de uso

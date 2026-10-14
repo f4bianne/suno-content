@@ -237,3 +237,27 @@ def test_feedback_de_legibilidade_traz_alvo_numerico():
     assert "cerca de 50" in msg and "mais curtas" in msg
     msg2 = _dica(Falha("legibilidade", "Flesch 63.0 fora da faixa 40 a 60"), ANCORA, {"flesch": 63.0})
     assert "mais longas" in msg2
+
+
+def test_feedback_de_glossario_traz_a_explicacao_pronta():
+    from avaliador.avaliar import Falha
+    from geracao.ramo import _dica
+    indice = glossario.Indice([glossario.Termo("Selic", 2, "juros", ("Selic",), False, "a taxa básica de juros da economia")])
+    msg = _dica(Falha("glossario", "termo de nível 2 sem explicacao: 'Selic' em \"...a Selic subiu...\""), ANCORA, {}, indice)
+    assert "Selic, que é a taxa básica de juros da economia" in msg
+    sem = _dica(Falha("glossario", "termo de nível 2 sem explicacao: 'Selic' em \"...\""), ANCORA, {})
+    assert "que é a taxa básica" not in sem   # sem o índice, só a orientação genérica
+
+
+def test_feedback_de_numeros_lista_os_permitidos():
+    from avaliador.avaliar import Falha
+    from geracao.ramo import _dica
+    msg = _dica(Falha("numeros", "número '231' não existe na âncora"), ANCORA, {})
+    permitidos = sorted({n for f in ANCORA.fatos for n in f.numeros})
+    assert permitidos and all(n in msg for n in permitidos) and "Não calcule" in msg
+
+
+def test_relatorio_pede_para_manter_o_que_estava_certo():
+    from avaliador.formatos import Artigo
+    r = prompts.relatorio_de_falhas(["[cobertura] x"], Artigo(titulo="t", corpo="c", conclusao="k"))
+    assert "Mantenha o que já estava certo" in r

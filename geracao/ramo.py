@@ -51,7 +51,7 @@ class EstadoRamo(TypedDict, total=False):
     juiz_indisponivel: int
 
 
-def _dica(f: av.Falha, ancora: Ancora, metricas: dict) -> str:
+def _dica(f: av.Falha, ancora: Ancora, metricas: dict, indice: glossario.Indice | None = None) -> str:
     """Mensagem da falha acrescida de uma orientação acionável."""
     extra = ""
     if f.metrica == "legibilidade":
@@ -64,13 +64,22 @@ def _dica(f: av.Falha, ancora: Ancora, metricas: dict) -> str:
     elif f.metrica == "cobertura":
         por_id = {x.id: x.texto for x in ancora.fatos}
         faltou = "; ".join(f"[{i}] {por_id.get(i, '')}" for i in metricas.get("fatos_ausentes", []))
-        extra = f" Inclua estes fatos com seus números: {faltou}." if faltou else ""
+        extra = (f" Inclua estes fatos com seus números, um por frase (ou cena), e mantenha o que já estava certo: {faltou}."
+                 if faltou else "")
     elif f.metrica == "formato":
         extra = " Respeite os limites do formato: corte o que for menos importante em vez de comprimir o texto."
     elif f.metrica == "numeros":
-        extra = " Remova ou corrija: só valem números que estão nos fatos."
+        validos = sorted({n for x in ancora.fatos for n in x.numeros})
+        extra = (" Remova ou corrija: só valem números que estão nos fatos."
+                 + (f" Os únicos números permitidos são: {', '.join(validos)}. Não calcule, não some e não converta." if validos else ""))
     elif f.metrica == "glossario":
         extra = " Troque o termo por palavras simples ou explique-o na mesma frase (\"ou seja\", \"que é\")."
+        nome = re.search(r"'([^']+)'", f.mensagem)
+        achado = None
+        if indice is not None and nome:
+            achado = next((t for t in indice.termos if t.termo.lower() == nome[1].lower() and t.explicacao), None)
+        if achado:
+            extra += f" Na primeira vez em que usar \"{achado.termo}\", escreva algo como: {achado.termo}, que é {achado.explicacao}."
     elif f.metrica == "recomendacao":
         extra = " Descreva o fato sem aconselhar compra, venda ou aplicação."
     return f"[{f.metrica}] {f.mensagem}.{extra}"
@@ -118,7 +127,7 @@ def construir_ramo(gerador: Cliente, juiz: Cliente, indice: glossario.Indice, cf
             tent.conteudo = schemas.conteudo_em_dict(conteudo)
             res = av.avaliar(conteudo, e["nivel"], indice, e["ancora"], cfg)
             tent.metricas = res.metricas
-            tent.falhas = [_dica(f, e["ancora"], res.metricas) for f in res.falhas]
+            tent.falhas = [_dica(f, e["ancora"], res.metricas, indice) for f in res.falhas]
             if res.aprovado:   # o juiz só roda depois das regras: poupa chamadas e as regras já dão o feedback
                 for volta in range(tentativas_juiz):   # limite de uso passa com um pouco de espera
                     try:
@@ -133,6 +142,8 @@ def construir_ramo(gerador: Cliente, juiz: Cliente, indice: glossario.Indice, cf
                         detalhe = f"HTTP {resp.status_code}: {resp.text[:120]}" if resp is not None else type(ex).__name__
                         tent.falhas = [f"[juiz] não foi possível avaliar ({detalhe})"]
                         indisponivel = True
+                        if resp is not None and resp.status_code == 400:
+                            break   # saída fora do schema: esperar não adianta, e o limite de uso não é o problema
                         if volta < tentativas_juiz - 1:
                             time.sleep(espera_juiz_s)
         tent.aprovado = not tent.falhas

@@ -20,7 +20,7 @@ from armazenamento.repositorio import Repositorio  # noqa: E402
 from armazenamento.servico import processar_com_banco  # noqa: E402
 from avaliador import avaliar as av  # noqa: E402
 from avaliador import glossario  # noqa: E402
-from avaliador.juiz import ClienteGroq  # noqa: E402
+from avaliador.juiz import clientes_groq  # noqa: E402
 from geracao import grafo  # noqa: E402
 from geracao.schemas import FORMATOS  # noqa: E402
 from ingestao import entrada  # noqa: E402
@@ -54,8 +54,8 @@ def main():
         doc = entrada.ingerir_pdf(arq.read_bytes(), arq.name, indice)
     print(f"Documento: {doc.proveniencia.url or doc.proveniencia.origem} ({len(doc.texto.split())} palavras)")
 
-    groq = ClienteGroq()
-    cl = grafo.Clientes(extrator=groq, gerador=ClienteGemini(), juiz=groq)
+    extrator, juiz = clientes_groq()
+    cl = grafo.Clientes(extrator=extrator, gerador=ClienteGemini(), juiz=juiz)
     p = processar_com_banco(doc, cl, indice, Repositorio(), niveis=tuple(a.niveis), formatos=tuple(a.formatos),
                             nivel_prioritario=a.prioritario, max_tentativas=a.tentativas, concorrencia=a.concorrencia,
                             max_fatos=a.fatos, sessao=a.sessao, forcar=a.forcar)
