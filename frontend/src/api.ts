@@ -49,6 +49,7 @@ export async function criarJobPdf(arquivo: File, o: Opcoes): Promise<{ id: strin
 }
 
 export const verJob = async (id: string) => json<Job>(await fetch(`/api/jobs/${id}`));
+export const cancelarJob = async (id: string) => json<{ id: string; status: string }>(await fetch(`/api/jobs/${id}/cancelar`, { method: "POST" }));
 export const listarExecucoes = async () => json<ResumoExecucao[]>(await fetch(`/api/execucoes${consultaSessao()}`));
 export const verExecucao = async (id: string) => json<Processamento>(await fetch(`/api/execucoes/${id}${consultaSessao()}`));
 export const verRelacionados = async (id: string) => json<Relacionado[]>(await fetch(`/api/execucoes/${id}/relacionados${consultaSessao()}`));

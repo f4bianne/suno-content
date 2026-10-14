@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { criarJob, criarJobPdf, listarExecucoes, verConfig, verExecucao, verGlossario, verJob, type Opcoes } from "./api";
+import { cancelarJob, criarJob, criarJobPdf, listarExecucoes, verConfig, verExecucao, verGlossario, verJob, type Opcoes } from "./api";
 import Andamento from "./componentes/Andamento";
 import Cabecalho from "./componentes/Cabecalho";
 import Entrada, { type Pedido } from "./componentes/Entrada";
@@ -32,6 +32,8 @@ export default function App() {
   const [resultado, setResultado] = useState<Processamento | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [total, setTotal] = useState(9);
+  const [aviso, setAviso] = useState<string | null>(null);
+  const jobAtual = useRef<string | null>(null);
   const [pedidos, setPedidos] = useState<string[] | undefined>(undefined);
   const fonte = useRef<EventSource | null>(null);
 
@@ -51,15 +53,17 @@ export default function App() {
 
   async function gerar(pedido: Pedido, opcoes: Opcoes) {
     fonte.current?.close();
-    setErro(null); setResultado(null); setEventos([]); setTela("gerando");
+    setErro(null); setAviso(null); setResultado(null); setEventos([]); setTela("gerando");
     setTotal(Math.max(1, opcoes.niveis.length * opcoes.formatos.length));
     setPedidos(opcoes.niveis.flatMap((n) => opcoes.formatos.map((f) => chaveCelula(n, f))));
     try {
       const { id } = pedido.tipo === "pdf" ? await criarJobPdf(pedido.arquivo, opcoes) : await criarJob(pedido.tipo, pedido.valor, opcoes);
+      jobAtual.current = id;
       const es = new EventSource(`/api/jobs/${id}/eventos`);
       fonte.current = es;
       es.onmessage = async (m) => {
         const ev: Evento = JSON.parse(m.data);
+        if (ev.tipo === "cancelado") { es.close(); return; }
         setEventos((atual) => [...atual, ev]);
         if (ev.tipo !== "fim" && ev.tipo !== "erro") return;
         es.close();
@@ -81,6 +85,16 @@ export default function App() {
     }
   }
 
+  /** Para a geração: o servidor não começa nada novo e não guarda o resultado. */
+  function cancelar() {
+    const id = jobAtual.current;
+    fonte.current?.close();
+    jobAtual.current = null;
+    if (id) cancelarJob(id).catch(() => undefined);   // se o servidor não responder, a tela volta mesmo assim
+    setTela("inicio"); setEventos([]); setResultado(null);
+    setAviso("Geração cancelada. Nada foi guardado.");
+  }
+
   async function abrir(id: string) {
     try {
       setErro(null);
@@ -96,11 +110,11 @@ export default function App() {
       <main className="miolo pagina">
         {tela === "inicio" && (
           <>
-            <Entrada ocupado={false} erro={erro} onGerar={gerar} />
+            <Entrada ocupado={false} erro={erro} aviso={aviso} onGerar={gerar} />
             <Historico itens={historico} onAbrir={abrir} />
           </>
         )}
-        {tela === "gerando" && <Andamento eventos={eventos} ao_vivo={celulasDosEventos(eventos)} total={total} pedidos={pedidos} />}
+        {tela === "gerando" && <Andamento eventos={eventos} ao_vivo={celulasDosEventos(eventos)} total={total} pedidos={pedidos} onCancelar={cancelar} />}
         {tela === "resultado" && resultado && (
           <Resultado key={resultado.execucao_id ?? resultado.documento_chave} resultado={resultado} config={config} glossario={glossario}
             onNovo={voltarAoInicio} historico={historico} onAbrir={abrir} />

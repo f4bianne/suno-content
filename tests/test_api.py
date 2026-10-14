@@ -198,3 +198,44 @@ def test_endpoint_de_relacionados_respeita_a_privacidade(cliente):
     assert cliente.get(f"/api/execucoes/{privado}/relacionados").status_code == 404   # sem a sessão, nem existe
     com_sessao = cliente.get(f"/api/execucoes/{privado}/relacionados?sessao={r['sessao']}").json()
     assert [x["id"] for x in com_sessao] == [exec_id]                                    # mesmo texto => mesmas entidades
+
+
+def test_cancelar_interrompe_o_job_e_nao_guarda_nada():
+    import threading
+
+    liberar = threading.Event()
+
+    class ExtratorLento(ExtratorFalso):
+        def completar_json(self, sistema, usuario, schema):
+            liberar.wait(10)          # fica "pensando" até o teste cancelar
+            return super().completar_json(sistema, usuario, schema)
+
+    cfg = av.carregar_config()
+    cfg["formatos"]["artigo"]["palavras"] = [20, 900]
+    repo = Repositorio("sqlite://")
+    app = criar_app(
+        fabrica_clientes=lambda: grafo.Clientes(extrator=ExtratorLento(), gerador=GeradorFalso(0), juiz=JuizFalso()),
+        ingestor=ingestor_falso, repositorio=repo, cfg=cfg)
+    c = TestClient(app)
+    job_id = c.post("/api/jobs", json={"tipo": "termo", "valor": "Copom"}).json()["id"]
+    time.sleep(0.5)
+
+    r = c.post(f"/api/jobs/{job_id}/cancelar")
+    assert r.status_code == 200 and r.json()["status"] == "cancelado"
+    liberar.set()                      # o extrator termina, mas o resultado não pode ser aproveitado
+    time.sleep(1.5)
+
+    j = c.get(f"/api/jobs/{job_id}").json()
+    assert j["status"] == "cancelado" and j["resultado"] is None and j["erro"] is None
+    assert j["eventos"][-1]["tipo"] == "cancelado"
+    assert c.get("/api/execucoes").json() == []
+    # cancelar de novo, ou um job que já acabou, é inofensivo
+    assert c.post(f"/api/jobs/{job_id}/cancelar").json()["status"] == "cancelado"
+    assert c.post("/api/jobs/nao_existe/cancelar").status_code == 404
+
+
+def test_cancelar_job_concluido_nao_muda_nada(cliente):
+    j = esperar(cliente, cliente.post("/api/jobs", json={"tipo": "termo", "valor": "Copom"}).json()["id"])
+    r = cliente.post(f"/api/jobs/{j['id']}/cancelar")
+    assert r.json()["status"] == "concluido"
+    assert len(cliente.get(f"/api/jobs/{j['id']}").json()["resultado"]["ramos"]) == 9

@@ -20,9 +20,9 @@ function descrever(e: Evento): { texto: string; classe?: string } | null {
   }
 }
 
-interface Props { eventos: Evento[]; ao_vivo: Record<string, EstadoCelula>; total?: number; pedidos?: string[] }
+interface Props { eventos: Evento[]; ao_vivo: Record<string, EstadoCelula>; total?: number; pedidos?: string[]; onCancelar?: () => void }
 
-export default function Andamento({ eventos, ao_vivo, total = 9, pedidos }: Props) {
+export default function Andamento({ eventos, ao_vivo, total = 9, pedidos, onCancelar }: Props) {
   const prontos = Object.values(ao_vivo).filter((c) => c.fase === "fim").length;
   const doCache = eventos.some((e) => e.tipo === "cache");
   const extraindo = eventos.some((e) => e.tipo === "extraindo") && !eventos.some((e) => e.tipo === "ancora");
@@ -36,6 +36,11 @@ export default function Andamento({ eventos, ao_vivo, total = 9, pedidos }: Prop
       <p className="manchete">{texto}</p>
       <div className="barra" aria-hidden="true"><i style={{ width: `${doCache ? 100 : Math.round((prontos / total) * 100)}%` }} /></div>
       <Etapas eventos={eventos} total={total} />
+      {onCancelar && (
+        <div className="acoes" style={{ marginTop: 0, marginBottom: 24 }}>
+          <button type="button" className="botao-contorno" onClick={onCancelar}>Cancelar geração</button>
+        </div>
+      )}
       <Mapa resultado={null} ao_vivo={ao_vivo} ocupado pedidos={pedidos} />
       <details className="detalhes-andamento">
         <summary>Ver detalhes</summary>

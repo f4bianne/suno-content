@@ -3,14 +3,15 @@ import type { Opcoes } from "../api";
 import { FORMATOS, NIVEIS, ROTULO_FORMATO, ROTULO_NIVEL, type Formato, type Nivel } from "../tipos";
 
 const SUGESTOES = ["Copom", "Inflação", "Estabilidade financeira", "Fundos de investimento"];
-type Modo = "termo" | "pdf";
-export type Pedido = { tipo: "termo"; valor: string } | { tipo: "pdf"; arquivo: File };
+type Modo = "termo" | "link" | "pdf";
+export type Pedido = { tipo: "termo" | "link"; valor: string } | { tipo: "pdf"; arquivo: File };
 
-interface Props { ocupado: boolean; erro: string | null; onGerar: (p: Pedido, o: Opcoes) => void }
+interface Props { ocupado: boolean; erro: string | null; aviso?: string | null; onGerar: (p: Pedido, o: Opcoes) => void }
 
-export default function Entrada({ ocupado, erro, onGerar }: Props) {
+export default function Entrada({ ocupado, erro, aviso, onGerar }: Props) {
   const [modo, setModo] = useState<Modo>("termo");
   const [termo, setTermo] = useState("");
+  const [link, setLink] = useState("");
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [prioritario, setPrioritario] = useState<Nivel | "">("");
   const [tentativas, setTentativas] = useState(3);
@@ -19,7 +20,8 @@ export default function Entrada({ ocupado, erro, onGerar }: Props) {
   const [formatos, setFormatos] = useState<Formato[]>([...FORMATOS]);
 
   const escolha = niveis.length > 0 && formatos.length > 0;
-  const pronto = escolha && (modo === "termo" ? termo.trim().length > 1 : arquivo !== null);
+  const linkValido = /^https:\/\/\S+$/i.test(link.trim());
+  const pronto = escolha && (modo === "termo" ? termo.trim().length > 1 : modo === "link" ? linkValido : arquivo !== null);
   const alternar = <T,>(lista: T[], item: T, ordem: readonly T[]) =>
     ordem.filter((x) => (x === item ? !lista.includes(x) : lista.includes(x)));
 
@@ -27,6 +29,7 @@ export default function Entrada({ ocupado, erro, onGerar }: Props) {
     e.preventDefault();
     const o: Opcoes = { niveis, formatos, prioritario: prioritario && niveis.includes(prioritario) ? prioritario : null, tentativas, forcar };
     if (modo === "pdf" && arquivo) onGerar({ tipo: "pdf", arquivo }, o);
+    else if (modo === "link") onGerar({ tipo: "link", valor: link.trim() }, o);
     else if (modo === "termo") onGerar({ tipo: "termo", valor: termo.trim() }, o);
   }
 
@@ -38,7 +41,7 @@ export default function Entrada({ ocupado, erro, onGerar }: Props) {
       </p>
 
       <div className="abas" role="tablist" aria-label="Como informar o documento">
-        {([["termo", "Um assunto"], ["pdf", "Um PDF"]] as [Modo, string][]).map(([id, nome]) => (
+        {([["termo", "Um assunto"], ["link", "Um link"], ["pdf", "Um PDF"]] as [Modo, string][]).map(([id, nome]) => (
           <button key={id} type="button" role="tab" className="aba" aria-selected={modo === id} onClick={() => setModo(id)}>{nome}</button>
         ))}
       </div>
@@ -50,6 +53,12 @@ export default function Entrada({ ocupado, erro, onGerar }: Props) {
           <div className="sugestoes">
             {SUGESTOES.map((s) => <button key={s} type="button" className="sugestao" onClick={() => setTermo(s)}>{s}</button>)}
           </div>
+        </div>
+      )}
+      {modo === "link" && (
+        <div className="campo">
+          <label htmlFor="link">Link do documento (https, de uma fonte oficial como BCB, CVM, Tesouro ou B3)</label>
+          <input id="link" type="url" value={link} onChange={(e) => setLink(e.target.value)} placeholder="https://www.bcb.gov.br/..." autoComplete="off" />
         </div>
       )}
       {modo === "pdf" && (
@@ -116,6 +125,7 @@ export default function Entrada({ ocupado, erro, onGerar }: Props) {
         <button className="botao" disabled={!pronto || ocupado}>{ocupado ? "Gerando…" : "Gerar conteúdos"}</button>
       </div>
       {erro && <div className="alerta" role="alert">{erro}</div>}
+      {aviso && !erro && <div className="alerta-suave" role="status" style={{ marginTop: 16 }}>{aviso}</div>}
     </form>
   );
 }

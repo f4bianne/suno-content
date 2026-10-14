@@ -56,16 +56,21 @@ class PedidoJob(BaseModel):
     forcar: bool = False          # ignora o cache e gera de novo
 
 
+class Cancelado(Exception):
+    """Levantada dentro do processamento quando a pessoa cancela: interrompe o grafo na próxima etapa."""
+
+
 @dataclass
 class Job:
     id: str
     entrada: dict
     sessao: str | None = None
-    status: str = "ingerindo"            # ingerindo | processando | concluido | erro
+    status: str = "ingerindo"            # ingerindo | processando | concluido | erro | cancelado
     eventos: list[dict] = field(default_factory=list)
     resultado: dict | None = None
     erro: str | None = None
     criado_em: float = field(default_factory=time.time)
+    cancelado: threading.Event = field(default_factory=threading.Event)
 
     def publicar(self, evento: dict) -> None:
         self.eventos.append({**evento, "t": round(time.time() - self.criado_em, 1)})
@@ -91,9 +96,16 @@ def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
         return entrada.ingerir_pdf(valor, nome or "documento.pdf", indice)
 
     def executar(job: Job, pedido: PedidoJob, tipo: str, valor: Any, nome: str | None) -> None:
+        def observar(evento: dict) -> None:
+            if job.cancelado.is_set():
+                raise Cancelado()
+            job.publicar(evento)
+
         try:
             job.publicar({"tipo": "ingerindo"})
             doc = ingerir(tipo, valor, nome)
+            if job.cancelado.is_set():
+                return
             p = doc.proveniencia
             job.publicar({"tipo": "documento", "origem": p.origem, "url": p.url, "palavras": len(doc.texto.split()),
                           "paginas": doc.paginas})
@@ -101,15 +113,23 @@ def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
             proc = processar_com_banco(
                 doc, fabrica_clientes(), indice, repo, cfg, niveis=tuple(pedido.niveis), formatos=tuple(pedido.formatos),
                 nivel_prioritario=pedido.prioritario, max_tentativas=pedido.tentativas, concorrencia=pedido.concorrencia,
-                sessao=job.sessao, forcar=pedido.forcar, observador=job.publicar,
+                sessao=job.sessao, forcar=pedido.forcar, observador=observar,
             )
+            if job.cancelado.is_set():
+                return   # terminou junto com o pedido de cancelamento: a pessoa pediu para parar
             job.resultado = json.loads(proc.model_dump_json())
             job.status = "concluido"
             job.publicar({"tipo": "fim", "execucao": proc.execucao_id, "do_cache": proc.do_cache})
+        except Cancelado:
+            return          # o status e o evento já foram publicados por quem cancelou
         except ErroIngestao as e:
+            if job.cancelado.is_set():
+                return
             job.erro, job.status = str(e), "erro"
             job.publicar({"tipo": "erro", "mensagem": job.erro})
         except Exception as e:   # chave ausente, API fora do ar etc.
+            if job.cancelado.is_set():
+                return
             job.erro, job.status = f"{type(e).__name__}: {str(e)[:300]}", "erro"
             job.publicar({"tipo": "erro", "mensagem": job.erro})
 
@@ -156,6 +176,17 @@ def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
         j = pegar(job_id)
         return {"id": j.id, "status": j.status, "entrada": j.entrada, "erro": j.erro, "eventos": j.eventos, "resultado": j.resultado}
 
+    @app.post("/api/jobs/{job_id}/cancelar")
+    def cancelar_job(job_id: str):
+        """Para o processamento: o que já está sendo escrito termina sozinho, mas nada novo começa e nada é guardado."""
+        j = pegar(job_id)
+        if j.status in ("concluido", "erro", "cancelado"):
+            return {"id": j.id, "status": j.status}
+        j.cancelado.set()
+        j.status = "cancelado"
+        j.publicar({"tipo": "cancelado"})
+        return {"id": j.id, "status": j.status}
+
     @app.get("/api/jobs/{job_id}/eventos")
     async def eventos(job_id: str):
         j = pegar(job_id)
@@ -166,7 +197,7 @@ def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
                 while enviados < len(j.eventos):
                     yield f"data: {json.dumps(j.eventos[enviados], ensure_ascii=False)}\n\n"
                     enviados += 1
-                if j.status in ("concluido", "erro") and enviados >= len(j.eventos):
+                if j.status in ("concluido", "erro", "cancelado") and enviados >= len(j.eventos):
                     return
                 await asyncio.sleep(0.4)
 
