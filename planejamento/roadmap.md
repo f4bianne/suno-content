@@ -396,17 +396,17 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 
 ### Fase 7: Backend e interface
 - [x] 26. FastAPI com progresso em tempo real
-- [ ] 27. Matriz de saídas 3x3 com mapa de calor
-- [ ] 28. Pré-visualização, termos destacados, métricas e antes/depois do loop
-- [ ] 29. Visão do leitor com nível inferido, seletor de nível e formato, data e fonte
-- [ ] 30. Navegação pelo histórico de versões
+- [x] 27. Matriz de saídas 3x3 com mapa de calor
+- [x] 28. Pré-visualização, termos destacados, métricas e antes/depois do loop
+- [x] 29. Visão do leitor com nível inferido, seletor de nível e formato, data e fonte
+- [x] 30. Navegação pelo histórico de versões
 
 ### Fase 8: Diferenciais (cortáveis, nesta ordem)
-- [ ] 31. Exportações para o Figma e prompt
-- [ ] 32. Inferência de nível na sessão
-- [ ] 33. Personas simuladas para a demo
-- [ ] 34. Recomendações por entidades e pesquisas em alta
-- [ ] 35. Comparação visual entre versões
+- [x] 31. Exportações para o Figma e prompt (SVG que o Figma importa, sem integração direta; prompt para IA de imagem com aviso)
+- [ ] 32. Inferência de nível na sessão (removido da interface: o leitor escolhe o nível)
+- [ ] 33. Personas simuladas para a demo (removido da interface: confuso e desnecessário)
+- [x] 34. Recomendações por entidades e pesquisas em alta (só por entidades; sem fonte de pesquisas em alta)
+- [x] 35. Comparação visual entre versões
 
 ### Fase 9: Entrega
 - [ ] 36. README com metodologia, resultados, trade-offs, reprodução e trabalhos futuros
