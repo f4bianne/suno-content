@@ -7,7 +7,7 @@ export const ROTULO_NIVEL: Record<Nivel, string> = { iniciante: "Iniciante", int
 export const ROTULO_FORMATO: Record<Formato, string> = { artigo: "Artigo", carrossel: "Carrossel", video: "Vídeo curto" };
 
 export interface Fato { id: string; texto: string; numeros: string[]; entidades: string[]; trecho_origem: string }
-export interface Cena { inicio_s: number; fim_s: number; fala: string; visual: string }
+export interface Cena { inicio_s: number; fim_s: number; fala: string; visual: string; texto_tela?: string }
 export type Conteudo = { titulo: string; corpo: string; conclusao: string } | { slides: string[] } | { cenas: Cena[] };
 
 export interface Veredito {

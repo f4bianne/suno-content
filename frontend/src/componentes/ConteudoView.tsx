@@ -1,5 +1,6 @@
 import type { Cena, Conteudo, TermoGlossario } from "../tipos";
 import { segmentar } from "../util/destaque";
+import { faixaDeTempo } from "../util/roteiro";
 
 /** Texto com os termos técnicos marcados. Passe `termos = null` para mostrar o texto limpo. */
 export function TextoComTermos({ texto, termos }: { texto: string; termos: TermoGlossario[] | null }) {
@@ -47,16 +48,20 @@ export default function ConteudoView({ conteudo, termos }: Props) {
     );
   }
   return (
-    <div className="cenas">
+    <ol className="roteiro" aria-label="Cenas do roteiro">
       {conteudo.cenas.map((c: Cena, i: number) => (
-        <div key={i} className="cena">
-          <div className="tempo">{c.inicio_s}–{c.fim_s} s</div>
-          <div>
-            <div>{T(c.fala)}</div>
-            <div className="visual">{i === 0 ? "Gancho visual: " : "Na tela: "}{c.visual}</div>
+        <li key={i} className="cena-roteiro">
+          <div className="cena-topo">
+            <span className="cena-numero">Cena {i + 1}</span>
+            <span className="cena-tempo">{faixaDeTempo(c)}</span>
           </div>
-        </div>
+          <dl className="cena-campos">
+            <div><dt>Narração</dt><dd className="narracao">{T(c.fala)}</dd></div>
+            {c.texto_tela && <div><dt>Texto na tela</dt><dd className="legenda-tela">{c.texto_tela}</dd></div>}
+            <div><dt>{i === 0 ? "Ação · gancho visual" : "Ação e imagens"}</dt><dd>{c.visual}</dd></div>
+          </dl>
+        </li>
       ))}
-    </div>
+    </ol>
   );
 }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { type Config, type Formato, type Nivel, type Processamento, type ResumoExecucao, type TermoGlossario } from "../tipos";
 import ExportarDesign from "./ExportarDesign";
 import OutrasVersoes from "./OutrasVersoes";
@@ -16,10 +17,11 @@ interface Props {
 /** Recursos de apoio, todos recolhidos: quem só quer ler o conteúdo nem precisa vê-los. */
 export default function Extras({ resultado, config, historico, termos, nivel, formato, onAbrir }: Props) {
   const ramo = resultado.ramos.find((r) => r.nivel === nivel && r.formato === formato);
+  const [aberto, setAberto] = useState(false);   // o conteúdo só é montado depois de aberto: nada pesado na tela inicial
   return (
-    <details className="secao-recolhida">
+    <details className="secao-recolhida" onToggle={(e) => setAberto((e.currentTarget as HTMLDetailsElement).open)}>
       <summary>Mais recursos</summary>
-      <div className="extras">
+      {aberto && <div className="extras">
         <section aria-labelledby="x-design">
           <h3 className="titulo" id="x-design">Levar para o design</h3>
           {ramo ? <ExportarDesign resultado={resultado} ramo={ramo} /> : <p className="apoio">Escolha um conteúdo gerado.</p>}
@@ -32,7 +34,7 @@ export default function Extras({ resultado, config, historico, termos, nivel, fo
           <h3 className="titulo" id="x-tambem">Veja também</h3>
           <VejaTambem execucaoId={resultado.execucao_id} onAbrir={onAbrir} />
         </section>
-      </div>
+      </div>}
     </details>
   );
 }

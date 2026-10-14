@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { resultado } from "../fixtures";
-import type { Ramo } from "../tipos";
 import { AVISO_IMAGEM, baixar, folhaSvg, nomeDoArquivo, promptImagem, quebrarLinhas, slideSvg } from "./exportacao";
 
 
@@ -61,17 +60,10 @@ describe("exportação", () => {
     expect(p).toContain(AVISO_IMAGEM);
   });
 
-  it("o prompt do vídeo usa o que aparece na tela de cada cena", () => {
-    const p = promptImagem(resultado, video);
-    expect(p).toContain("Cena 1 (0-20 s, vertical 1080x1920): seta para cima");
-    expect(p).toContain("Cena 2");
-    expect(p).toContain(AVISO_IMAGEM);
-  });
-
-  it("artigo ganha prompt de capa e conteúdo sem texto não quebra", () => {
-    expect(promptImagem(resultado, artigo)).toContain("Imagem de capa");
-    const vazio: Ramo = { ...artigo, conteudo: null };
-    expect(promptImagem(resultado, vazio)).toContain("não tem texto para ilustrar");
+  it("prompt de imagem só existe para carrossel", () => {
+    expect(promptImagem(resultado, video)).toBe("");
+    expect(promptImagem(resultado, artigo)).toBe("");
+    expect(promptImagem(resultado, { ...carrossel, conteudo: null })).toBe("");
   });
 
   it("baixar cria o arquivo e limpa o link temporário", () => {

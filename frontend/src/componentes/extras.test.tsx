@@ -23,9 +23,12 @@ describe("ExportarDesign", () => {
     Object.defineProperty(navigator, "clipboard", { value: { writeText: copiar }, configurable: true });
 
     render(<ExportarDesign resultado={resultado} ramo={ramoDe("iniciante", "carrossel")} />);
-    fireEvent.click(botao("Baixar os slides (SVG)"));
-    expect(criarUrl).toHaveBeenCalledTimes(1);
-    expect(screen.getByText(/Slide 1/)).toBeTruthy();
+    expect(document.querySelectorAll(".slide-miniatura")).toHaveLength(5);          // um cartão por slide
+    fireEvent.click(botao("Folha única para o Figma (SVG)"));
+    fireEvent.click(screen.getAllByRole("button", { name: "SVG" })[0]);             // um slide separado
+    expect(criarUrl).toHaveBeenCalledTimes(2);
+    expect(screen.getByRole("button", { name: /Baixar todos os slides \(PNG/ })).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "PNG" })).toHaveLength(5);
     expect(document.querySelector(".alerta-suave")).not.toBeNull();    // aviso sobre imagens geradas por IA
 
     fireEvent.click(botao("Copiar prompt"));
@@ -34,11 +37,49 @@ describe("ExportarDesign", () => {
     expect(String((copiar.mock.calls[0] as unknown[])[0])).toContain("Selic");
   });
 
-  it("em artigo e vídeo, não oferece slides, mas mantém o prompt", () => {
+  it("no vídeo, oferece o roteiro para copiar e baixar em planilha, texto e tabela", async () => {
+    const criarUrl = vi.fn(() => "blob:x");
+    vi.stubGlobal("URL", Object.assign(URL, { createObjectURL: criarUrl, revokeObjectURL: vi.fn() }));
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    const copiar = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText: copiar }, configurable: true });
+
+    render(<ExportarDesign resultado={resultado} ramo={ramoDe("intermediario", "video")} />);
+    fireEvent.click(botao("Baixar planilha (.csv)"));
+    fireEvent.click(botao("Baixar texto (.txt)"));
+    fireEvent.click(botao("Baixar tabela (.md)"));
+    expect(criarUrl).toHaveBeenCalledTimes(3);
+    fireEvent.click(botao("Copiar roteiro"));
+    await waitFor(() => expect(botao("Roteiro copiado")).toBeTruthy());
+    expect(String((copiar.mock.calls[0] as unknown[])[0])).toContain("NARRAÇÃO: A Selic subiu.");
+  });
+
+  it("no artigo, oferece copiar e baixar em html, markdown e texto, sem prompt de imagem", async () => {
+    const criarUrl = vi.fn(() => "blob:x");
+    vi.stubGlobal("URL", Object.assign(URL, { createObjectURL: criarUrl, revokeObjectURL: vi.fn() }));
+    vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => undefined);
+    const copiar = vi.fn(async () => undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText: copiar }, configurable: true });
+
     render(<ExportarDesign resultado={resultado} ramo={ramoDe("iniciante", "artigo")} />);
-    expect(screen.queryByRole("button", { name: "Baixar os slides (SVG)" })).toBeNull();
-    expect(screen.getByText(/vale para o carrossel/)).toBeTruthy();
-    expect(screen.getByLabelText(/Prompt \(você pode editar/)).toBeTruthy();
+    fireEvent.click(botao("Baixar página (.html)"));
+    fireEvent.click(botao("Baixar Markdown (.md)"));
+    fireEvent.click(botao("Baixar texto (.txt)"));
+    expect(criarUrl).toHaveBeenCalledTimes(3);
+    fireEvent.click(botao("Copiar artigo"));
+    await waitFor(() => expect(botao("Artigo copiado")).toBeTruthy());
+    expect(String((copiar.mock.calls[0] as unknown[])[0])).toContain("Fonte: Ata do Copom nº 281");
+    expect(screen.queryByText(/Prompt para IA de imagem/)).toBeNull();
+    expect(document.querySelectorAll(".slide-miniatura")).toHaveLength(0);
+  });
+
+  it("só o carrossel tem prompt de imagem; vídeo e artigo não", () => {
+    const { unmount } = render(<ExportarDesign resultado={resultado} ramo={ramoDe("iniciante", "carrossel")} />);
+    expect(screen.getByText(/Prompt para IA de imagem/)).toBeTruthy();
+    unmount();
+    render(<ExportarDesign resultado={resultado} ramo={ramoDe("iniciante", "video")} />);
+    expect(screen.queryByText(/Prompt para IA de imagem/)).toBeNull();
+    expect(screen.queryByLabelText(/Prompt \(você pode editar/)).toBeNull();
   });
 });
 

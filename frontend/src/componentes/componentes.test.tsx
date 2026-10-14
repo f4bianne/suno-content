@@ -64,7 +64,10 @@ describe("Resultado", () => {
     expect(screen.getByText("Gancho")).toBeTruthy();
     fireEvent.click(formato(/Vídeo curto/));
     expect(container.textContent).toContain("A Selic subiu.");   // "Selic" está marcada, então o texto vem em pedaços
-    expect(screen.getByText("Gancho visual: seta para cima")).toBeTruthy();
+    expect(screen.getByText("Ação · gancho visual")).toBeTruthy();
+    expect(screen.getByText("seta para cima")).toBeTruthy();
+    expect(screen.getByText("Selic em alta")).toBeTruthy();                  // texto na tela da primeira cena
+    expect(screen.getByText("0:00–0:20")).toBeTruthy();
   });
 
   it("um conteúdo bloqueado mostra o motivo em linguagem simples", () => {
@@ -189,13 +192,26 @@ describe("Entrada e histórico", () => {
       { niveis: ["iniciante", "intermediario", "avancado"], formatos: ["artigo", "carrossel", "video"], prioritario: "avancado", tentativas: 3, forcar: false });
   });
 
-  it("as sugestões preenchem o campo e a aba de link não existe", () => {
+  it("as sugestões preenchem o campo e as três abas existem", () => {
     render(<Entrada ocupado={false} erro={null} onGerar={vi.fn()} />);
     fireEvent.click(botao("Inflação"));
     expect((screen.getByLabelText(/Assunto/) as HTMLInputElement).value).toBe("Inflação");
-    expect(screen.queryByRole("tab", { name: "Um link" })).toBeNull();
-    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["Um assunto", "Um PDF"]);
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["Um assunto", "Um link", "Um PDF"]);
     expect((botao("Gerar conteúdos") as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("aba de link só habilita com um endereço https e envia o pedido de link", () => {
+    const onGerar = vi.fn();
+    render(<Entrada ocupado={false} erro={null} onGerar={onGerar} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Um link" }));
+    const gerar = botao("Gerar conteúdos") as HTMLButtonElement;
+    const campo = screen.getByLabelText(/Link do documento/);
+    fireEvent.change(campo, { target: { value: "http://www.bcb.gov.br/x.pdf" } });
+    expect(gerar.disabled).toBe(true);
+    fireEvent.change(campo, { target: { value: "https://www.bcb.gov.br/x.pdf" } });
+    expect(gerar.disabled).toBe(false);
+    fireEvent.submit(gerar.closest("form")!);
+    expect(onGerar).toHaveBeenCalledWith({ tipo: "link", valor: "https://www.bcb.gov.br/x.pdf" }, expect.objectContaining({ tentativas: 3 }));
   });
 
   it("aba de PDF pede o arquivo e mostra erro e estado ocupado", () => {
@@ -291,6 +307,23 @@ describe("App", () => {
     act(() => { es.emitir({ tipo: "fim", execucao: "abc123" }); });
     expect(await screen.findByText("Iniciante · Artigo")).toBeTruthy();
     expect(es.fechado).toBe(true);
+  });
+
+  it("cancelar fecha a conexão, avisa o servidor e volta ao formulário", async () => {
+    const chamadas = servidor({ "/api/config": config, "/api/glossario": glossario, "/api/execucoes": [],
+      "/api/jobs/job1/cancelar": { id: "job1", status: "cancelado" }, "/api/jobs": { id: "job1", sessao: null } });
+    render(<App />);
+    fireEvent.change(screen.getByLabelText(/Assunto/), { target: { value: "Copom" } });
+    fireEvent.click(botao("Gerar conteúdos"));
+    await screen.findByText("Gerando");
+    await waitFor(() => expect(FalsoEventSource.ultimo).not.toBeNull());
+    const es = FalsoEventSource.ultimo!;
+
+    fireEvent.click(botao("Cancelar geração"));
+    expect(await screen.findByText(/Geração cancelada/)).toBeTruthy();
+    expect(es.fechado).toBe(true);
+    expect(chamadas.some((c) => c.url === "/api/jobs/job1/cancelar" && c.metodo === "POST")).toBe(true);
+    expect(screen.getByLabelText(/Assunto/)).toBeTruthy();    // formulário de volta
   });
 
   it("mostra o erro do servidor e volta para o formulário", async () => {

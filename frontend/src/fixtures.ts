@@ -33,7 +33,10 @@ function ramo(nivel: Ramo["nivel"], formato: Ramo["formato"], status: Ramo["stat
 }
 
 const carrossel = { slides: ["Gancho curto", "A Selic subiu para 14,25%", "Isso encarece o crédito", "Fique atento", "Conclusão"] };
-const video = { cenas: [{ inicio_s: 0, fim_s: 20, fala: "A Selic subiu.", visual: "seta para cima" }, { inicio_s: 20, fim_s: 40, fala: "O crédito fica mais caro.", visual: "casa" }] };
+const video = { cenas: [
+  { inicio_s: 0, fim_s: 20, fala: "A Selic subiu.", visual: "seta para cima", texto_tela: "Selic em alta" },
+  { inicio_s: 20, fim_s: 40, fala: "O crédito fica mais caro.", visual: "casa", texto_tela: "Crédito mais caro" },
+] };
 
 /** Um resultado completo: o artigo de iniciante foi reescrito e aprovou; o vídeo de iniciante ficou bloqueado. */
 export const resultado: Processamento = {

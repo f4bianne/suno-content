@@ -37,6 +37,8 @@ export function slideSvg(texto: string, indice: number, total: number, deslocame
   return `<g id="slide-${indice + 1}-${papel}" transform="translate(${deslocamentoX},0)">
   <rect width="${TAMANHO}" height="${TAMANHO}" fill="${fundo}"/>
   <text x="96" y="104" font-family="Arial, Helvetica, sans-serif" font-size="30" fill="${VERMELHO}" font-weight="700">(<tspan fill="${apoio}" letter-spacing="9" font-weight="400"> SUNO </tspan>)</text>
+  <text x="${TAMANHO - 96}" y="104" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" letter-spacing="3" fill="${apoio}">${String(indice + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}</text>
+  <rect x="96" y="136" width="${TAMANHO - 192}" height="2" fill="${escuro ? "#3A3A3A" : "#D9D9D9"}"/>
   <text font-family="Arial, Helvetica, sans-serif" font-size="${tamanho}" font-weight="${papel === "corpo" ? 400 : 700}" fill="${tinta}">${tspans}</text>
   <rect x="96" y="${TAMANHO - 150}" width="120" height="6" fill="${VERMELHO}"/>
   <text x="96" y="${TAMANHO - 96}" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" letter-spacing="4" fill="${apoio}">${xml(rotulo)}</text>
@@ -70,20 +72,13 @@ export const nomeDoArquivo = (r: Pick<Processamento, "origem">, ramo: Pick<Ramo,
 const ESTILO = "Ilustração editorial minimalista e sóbria, fundo carvão e branco, um único detalhe em vermelho (#D42126), " +
   "formas geométricas simples, sem pessoas reconhecíveis, sem logotipos, sem qualquer texto ou número escrito na imagem";
 
-/** Prompt para uma IA de imagem, a partir dos slides ou do que aparece na tela do vídeo. */
+/** Prompt para uma IA de imagem, um item por slide do carrossel. Só vale para carrossel; nos outros formatos devolve vazio. */
 export function promptImagem(r: Processamento, ramo: Ramo): string {
   const c = ramo.conteudo;
+  if (!c || !("slides" in c)) return "";
   const cabecalho = `Conteúdo: ${ROTULO_NIVEL[ramo.nivel]}, ${ROTULO_FORMATO[ramo.formato]}, sobre "${r.origem}".\nEstilo para todas as imagens: ${ESTILO}.\n`;
-  if (!c) return `${cabecalho}\nEste conteúdo não tem texto para ilustrar.`;
-  if ("slides" in c) {
-    const itens = c.slides.map((s, i) => `Imagem ${i + 1} (quadrada, 1080x1080) para o slide: "${s}"`);
-    return `${cabecalho}\n${itens.join("\n")}\n\n${AVISO_IMAGEM}`;
-  }
-  if ("cenas" in c) {
-    const itens = c.cenas.map((x, i) => `Cena ${i + 1} (${x.inicio_s}-${x.fim_s} s, vertical 1080x1920): ${x.visual}. Fala da cena: "${x.fala}"`);
-    return `${cabecalho}\n${itens.join("\n")}\n\n${AVISO_IMAGEM}`;
-  }
-  return `${cabecalho}\nImagem de capa (horizontal, 1600x900) para o artigo "${c.titulo}".\n\n${AVISO_IMAGEM}`;
+  const itens = c.slides.map((s, i) => `Imagem ${i + 1} (quadrada, 1080x1080) para o slide: "${s}"`);
+  return `${cabecalho}\n${itens.join("\n")}\n\n${AVISO_IMAGEM}`;
 }
 
 /** Baixa um texto como arquivo. Separado para poder ser trocado nos testes. */
