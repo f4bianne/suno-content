@@ -261,3 +261,11 @@ def test_relatorio_pede_para_manter_o_que_estava_certo():
     from avaliador.formatos import Artigo
     r = prompts.relatorio_de_falhas(["[cobertura] x"], Artigo(titulo="t", corpo="c", conclusao="k"))
     assert "Mantenha o que já estava certo" in r
+
+
+def test_prompt_do_video_pede_texto_cheio_e_uma_cena_por_fato():
+    cfg = {"formatos": {"video": {"duracao_maxima_s": 60, "palavras_por_segundo": 2.5}}}
+    txt = prompts.instrucao_formato("video", cfg)
+    assert "entre 100 e 125 palavras" in txt
+    assert "CADA fato" in txt
+    assert "priorize" not in txt          # mandar priorizar derrubava a cobertura dos fatos

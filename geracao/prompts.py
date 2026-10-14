@@ -62,11 +62,20 @@ def instrucao_formato(formato: str, cfg: dict) -> str:
                 "traz uma ideia completa. Não cabe tudo: priorize os fatos mais importantes.")
     pmax, pps = f["video"]["duracao_maxima_s"], f["video"]["palavras_por_segundo"]
     limite = int((pmax - 10) * pps)
-    return (f"FORMATO: roteiro de vídeo curto de no máximo {pmax - 5} segundos. Lista de cenas com inicio_s e fim_s (começa em 0, "
-            f"sem lacunas, a última termina em até {pmax - 5}), fala (texto lido em voz alta) e visual (o que aparece na tela). "
-            f"REGRA DURA: some todas as falas e use no máximo {limite} palavras (acima disso o vídeo passa de {pmax} s e é "
-            "rejeitado). Não cabe tudo: priorize os fatos mais importantes. "
-            "O visual da primeira cena é um gancho visual que prende a atenção.")
+    minimo = int(limite * 0.8)
+    return (f"FORMATO: roteiro de vídeo curto de no máximo {pmax - 5} segundos, como um roteiro de produção. Cada cena tem: "
+            "inicio_s e fim_s (começa em 0, sem lacunas, a última termina em até "
+            f"{pmax - 5}); fala (a narração lida em voz alta); visual (a ação e as imagens: o que a pessoa faz e o que aparece, "
+            "em uma frase concreta, como \"mãos segurando uma nota de cem reais\"); texto_tela (a legenda grande que aparece "
+            "no vídeo: de 2 a 6 palavras, só texto, SEM emoji, a ideia central da cena). "
+            f"REGRA DURA: some todas as falas e escreva entre {minimo} e {limite} palavras. Abaixo de {minimo} o vídeo fica "
+            f"curto e deixa fatos de fora; acima de {limite} passa de {pmax} s e é rejeitado. Use o tempo todo: inicio_s e "
+            f"fim_s acompanham a fala, a {pps:g} palavras por segundo. "
+            "ESTRUTURA, de 5 a 7 cenas: (1) gancho que prende em poucos segundos; (2) o contexto, o que aconteceu; (3) uma cena "
+            "curta para CADA fato fornecido, com o número dito na fala exatamente como está nos fatos; (4) o que isso muda ou "
+            "significa para quem assiste, como consequência geral e sem número novo; (5) fechamento que resume a ideia, sem "
+            "pedir para comprar, vender ou aplicar nada. Número no texto_tela só se a fala da mesma cena o diz. "
+            "Termo técnico que exige explicação é explicado na própria cena.")
 
 
 def sistema(nivel: str, formato: str, termos: list[Termo], cfg: dict) -> str:

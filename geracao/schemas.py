@@ -29,7 +29,8 @@ class CenaLLM(_Estrito):
     inicio_s: float
     fim_s: float
     fala: str
-    visual: str            # o que aparece na tela; na primeira cena é o gancho visual
+    visual: str            # ação e imagens da cena; na primeira cena é o gancho visual
+    texto_tela: str        # legenda grande que aparece no vídeo (curta, sem emoji)
 
 
 class RoteiroLLM(_Estrito):

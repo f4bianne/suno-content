@@ -1,4 +1,6 @@
 """Estruturas mínimas dos três formatos e verificação dos limites (resumo; schemas finais no item 17)."""
+import re
+
 from pydantic import BaseModel
 
 from avaliador.texto import palavras
@@ -19,6 +21,7 @@ class Cena(BaseModel):
     fim_s: float
     fala: str
     visual: str
+    texto_tela: str = ""   # legenda grande que aparece no vídeo
 
 
 class Roteiro(BaseModel):
@@ -87,4 +90,27 @@ def verificar(conteudo: Conteudo, cfg: dict) -> list[str]:
         for i, c in enumerate(conteudo.cenas, 1):
             if c.fim_s <= c.inicio_s:
                 falhas.append(f"cena {i} com marcação de tempo inválida")
+            falhas.extend(_verificar_texto_tela(i, c, v.get("palavras_texto_tela", 8)))
+    return falhas
+
+
+_EMOJI = re.compile("[🀀-🫿←-⇿☀-➿⬀-⯿️]")
+_NUMERO = re.compile(r"\d+(?:[.,]\d+)?")
+
+
+def _verificar_texto_tela(i: int, cena: Cena, maximo_palavras: int) -> list[str]:
+    """O texto na tela é uma legenda curta, sem emoji e sem número que a fala não diga (não cria dado novo)."""
+    t = cena.texto_tela.strip()
+    if not t:
+        return [f"cena {i} sem texto na tela (legenda curta do que é dito)"]
+    falhas = []
+    n = len(palavras(t))
+    if n > maximo_palavras:
+        falhas.append(f"texto na tela da cena {i} com {n} palavras (máximo {maximo_palavras}): deixe só a ideia central")
+    if _EMOJI.search(t):
+        falhas.append(f"texto na tela da cena {i} com emoji: use só palavras")
+    fala = cena.fala
+    for num in _NUMERO.findall(t):
+        if num not in fala:
+            falhas.append(f"texto na tela da cena {i} traz o número {num}, que a fala não diz")
     return falhas
