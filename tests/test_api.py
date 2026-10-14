@@ -165,3 +165,36 @@ def test_pdf_so_aparece_para_a_sessao_que_enviou(cliente):
     assert cliente.get(f"/api/execucoes/{exec_id}").status_code == 404
     assert cliente.get(f"/api/execucoes/{exec_id}?sessao=outra").status_code == 404
     assert cliente.get(f"/api/execucoes/{exec_id}?sessao={sessao}").status_code == 200
+
+
+def test_glossario_para_destacar_termos(cliente):
+    g = cliente.get("/api/glossario").json()
+    selic = next(t for t in g if t["termo"] == "Selic")
+    assert selic["nivel"] == 2 and "Selic" in selic["formas"] and selic["explicacao"] and selic["ambiguo"] is False
+    assert any(t["ambiguo"] for t in g) and len(g) > 250
+
+
+def test_interface_compilada_e_servida_na_raiz_sem_atrapalhar_a_api(tmp_path):
+    (tmp_path / "index.html").write_text("<html><title>front</title></html>", encoding="utf-8")
+    app = criar_app(ingestor=ingestor_falso, repositorio=Repositorio("sqlite://"), pasta_front=tmp_path)
+    c = TestClient(app)
+    assert "<title>front</title>" in c.get("/").text
+    assert c.get("/api/config").status_code == 200 and c.get("/api/execucoes").json() == []
+
+
+def test_sem_interface_compilada_a_raiz_nao_existe(tmp_path):
+    app = criar_app(ingestor=ingestor_falso, repositorio=Repositorio("sqlite://"), pasta_front=tmp_path / "nao_existe")
+    assert TestClient(app).get("/").status_code == 404
+
+
+
+def test_endpoint_de_relacionados_respeita_a_privacidade(cliente):
+    j = esperar(cliente, cliente.post("/api/jobs", json={"tipo": "termo", "valor": "Copom"}).json()["id"])
+    exec_id = j["resultado"]["execucao_id"]
+    assert cliente.get(f"/api/execucoes/{exec_id}/relacionados").json() == []        # só há um documento
+    assert cliente.get("/api/execucoes/nada/relacionados").status_code == 404
+    r = cliente.post("/api/jobs/pdf?nome=privado.pdf", content=b"%PDF-1.4 fake").json()
+    privado = esperar(cliente, r["id"])["resultado"]["execucao_id"]
+    assert cliente.get(f"/api/execucoes/{privado}/relacionados").status_code == 404   # sem a sessão, nem existe
+    com_sessao = cliente.get(f"/api/execucoes/{privado}/relacionados?sessao={r['sessao']}").json()
+    assert [x["id"] for x in com_sessao] == [exec_id]                                    # mesmo texto => mesmas entidades

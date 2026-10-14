@@ -12,17 +12,21 @@ import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Callable, Literal
+
+import yaml
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from armazenamento.repositorio import Repositorio
 from armazenamento.servico import processar_com_banco
 from avaliador import avaliar as av
 from avaliador import glossario
-from avaliador.juiz import ClienteGroq
+from avaliador.juiz import clientes_groq
 from geracao import grafo
 from geracao.schemas import FORMATOS
 from ingestao import entrada
@@ -30,12 +34,14 @@ from ingestao.clientes import ClienteGemini
 from ingestao.documento import Documento, ErroIngestao
 
 LIMITE_PDF = 26 * 1024 * 1024
+RAIZ = Path(__file__).resolve().parent.parent
+PASTA_FRONT = RAIZ / "frontend" / "dist"   # gerada por `npm run build` em frontend/
 
 
 def clientes_padrao() -> grafo.Clientes:
-    """Extrator e juiz na Groq (gpt-oss-120b) e gerador no Gemini, como na seção 8 do roadmap."""
-    groq = ClienteGroq()
-    return grafo.Clientes(extrator=groq, gerador=ClienteGemini(), juiz=groq)
+    """Extrator e juiz na Groq (gpt-oss-120b, ou outro modelo para o juiz via JUIZ_MODELO) e gerador no Gemini."""
+    extrator, juiz = clientes_groq()
+    return grafo.Clientes(extrator=extrator, gerador=ClienteGemini(), juiz=juiz)
 
 
 class PedidoJob(BaseModel):
@@ -67,7 +73,7 @@ class Job:
 
 def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
               ingestor: Callable[..., Documento] | None = None, repositorio: Repositorio | None = None,
-              cfg: dict | None = None) -> FastAPI:
+              cfg: dict | None = None, pasta_front: Path | None = PASTA_FRONT) -> FastAPI:
     app = FastAPI(title="Suno Content")
     indice = glossario.Indice(glossario.carregar())
     repo = repositorio or Repositorio()
@@ -180,11 +186,33 @@ def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
             raise HTTPException(404, "execução não encontrada")
         return json.loads(proc.model_dump_json())
 
+    @app.get("/api/execucoes/{execucao_id}/relacionados")
+    def ver_relacionados(execucao_id: str, sessao: str | None = None):
+        """Outros documentos com as mesmas entidades (por exemplo, quem também fala de Selic e IPCA)."""
+        if not repo.pode_ver(execucao_id, sessao):
+            raise HTTPException(404, "execução não encontrada")
+        return repo.relacionados(execucao_id, sessao)
+
     @app.get("/api/config")
     def configuracao():
         c = cfg or av.carregar_config()
         return {"niveis": list(av.NIVEIS), "formatos": list(FORMATOS), "limiares": c["niveis"], "formato_limites": c["formatos"]}
 
+    with open(glossario.CAMINHO_PADRAO, encoding="utf-8") as f:
+        termos_glossario = [
+            {"termo": t["termo"], "nivel": t["nivel"], "formas": [t["termo"], *t.get("variantes", [])],
+             "explicacao": t["explicacao_curta"], "ambiguo": bool(t.get("ambiguo", False))}
+            for t in yaml.safe_load(f)["termos"]
+        ]
+
+    @app.get("/api/glossario")
+    def ver_glossario():
+        """Termos do glossario, para a interface destacar no texto o que e jargao de cada nivel."""
+        return termos_glossario
+
+    # A interface compilada (frontend/dist) e servida na raiz, depois das rotas /api.
+    if pasta_front is not None and Path(pasta_front).exists():
+        app.mount("/", StaticFiles(directory=pasta_front, html=True), name="front")
     return app
 
 
