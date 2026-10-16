@@ -46,6 +46,9 @@ export default function Avaliacao({ ramo, config }: Props) {
                 Tentativa {i + 1}: <span className={t.aprovado ? "selo ok" : "selo ruim"}>{t.aprovado ? "▲ aprovada" : "▼ reprovada"}</span>
               </span>
               {motivo && <span className="apoio">{t.falhas.length > 1 ? `${t.falhas.length} problemas. Primeiro: ` : "Problema: "}{motivo}</span>}
+              {t.metricas.explicacoes_inseridas && t.metricas.explicacoes_inseridas.length > 0 && (
+                <span className="legenda">O sistema acrescentou a definição do glossário em: {t.metricas.explicacoes_inseridas.join(", ")}.</span>
+              )}
               {!t.aprovado && i < ramo.tentativas.length - 1 && (
                 t.metricas.plano_revisao ? (
                   <details className="plano-revisor">

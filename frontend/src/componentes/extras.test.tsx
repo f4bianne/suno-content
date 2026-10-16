@@ -205,3 +205,13 @@ describe("Avaliacao: plano do revisor", () => {
     expect(screen.getByText(/O relatório de falhas foi entregue ao gerador/)).toBeTruthy();
   });
 });
+
+describe("Avaliacao: definição acrescentada pelo sistema", () => {
+  it("avisa quais termos ganharam a definição do glossário", async () => {
+    const { default: Avaliacao } = await import("./Avaliacao");
+    const base = ramoDe("iniciante", "artigo");
+    const ramo = { ...base, tentativas: base.tentativas.map((t, i) => i === 0 ? { ...t, metricas: { ...t.metricas, explicacoes_inseridas: ["Selic", "CDB"] } } : t) };
+    render(<Avaliacao ramo={ramo} config={config} />);
+    expect(screen.getByText("O sistema acrescentou a definição do glossário em: Selic, CDB.")).toBeTruthy();
+  });
+});

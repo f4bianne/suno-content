@@ -18,6 +18,7 @@ export interface Metricas {
   flesch?: number; cobertura?: number; fatos_ausentes?: string[];
   densidade?: { contagem: Record<string, number>; nivel23_por_100_palavras: number };
   plano_revisao?: PlanoRevisao;
+  explicacoes_inseridas?: string[];   // termos em que o sistema acrescentou a definição do glossário
 }
 /** O que o agente revisor orientou para a tentativa seguinte. */
 export interface PlanoRevisao { diagnostico: string; acoes: string[]; manter: string[] }
