@@ -166,7 +166,7 @@ describe("Entrada: escolher o que gerar", () => {
     expect(screen.getByText(/2 conteúdos/)).toBeTruthy();
     fireEvent.submit(botao("Gerar conteúdos").closest("form")!);
     expect(onGerar).toHaveBeenCalledWith({ tipo: "termo", valor: "Copom" },
-      { niveis: ["iniciante"], formatos: ["artigo", "carrossel"], prioritario: null, tentativas: 3, forcar: false });
+      { niveis: ["iniciante"], formatos: ["artigo", "carrossel"], prioritario: null, tentativas: 2, forcar: false });
     fireEvent.click(niveis.getByLabelText("Iniciante"));
     expect((botao("Gerar conteúdos") as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText(/pelo menos um nível/)).toBeTruthy();
@@ -179,5 +179,29 @@ describe("Mapa durante a geração parcial", () => {
     render(<Mapa resultado={null} ao_vivo={{}} ocupado pedidos={["iniciante|carrossel"]} />);
     expect(screen.getAllByText("Na fila")).toHaveLength(1);
     expect(screen.getAllByText("Não pedido")).toHaveLength(8);
+  });
+});
+
+describe("Avaliacao: plano do revisor", () => {
+  it("mostra o plano que o revisor montou entre uma tentativa e a seguinte", async () => {
+    const { default: Avaliacao } = await import("./Avaliacao");
+    const base = ramoDe("iniciante", "artigo");
+    const ramo = {
+      ...base,
+      tentativas: base.tentativas.map((t, i) => i === 0
+        ? { ...t, metricas: { ...t.metricas, plano_revisao: { diagnostico: "Usou jargão sem explicar.", acoes: ["Explique a Selic no primeiro parágrafo."], manter: ["O número 14,25"] } } }
+        : t),
+    };
+    render(<Avaliacao ramo={ramo} config={config} />);
+    expect(screen.getByText("O revisor leu as falhas e montou um plano para a reescrita")).toBeTruthy();
+    expect(screen.getByText("Usou jargão sem explicar.")).toBeTruthy();
+    expect(screen.getByText("Explique a Selic no primeiro parágrafo.")).toBeTruthy();
+    expect(screen.getByText(/Manter: O número 14,25/)).toBeTruthy();
+  });
+
+  it("sem plano, mantém a explicação antiga", async () => {
+    const { default: Avaliacao } = await import("./Avaliacao");
+    render(<Avaliacao ramo={ramoDe("iniciante", "artigo")} config={config} />);
+    expect(screen.getByText(/O relatório de falhas foi entregue ao gerador/)).toBeTruthy();
   });
 });

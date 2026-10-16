@@ -96,7 +96,7 @@ export default function ExportarDesign({ resultado, ramo }: Props) {
         </>
       ) : cenas ? (
         <>
-          <p className="apoio">O roteiro sai pronto para a equipe de produção: tempo, narração, texto na tela e ação de cada cena.</p>
+          <p className="apoio">O roteiro sai pronto para a equipe de produção: tempo, narração e ação de cada cena.</p>
           <div className="acoes">
             <button type="button" className="botao-contorno" onClick={copiarRoteiro}>{roteiroCopiado ? "Roteiro copiado" : "Copiar roteiro"}</button>
             <button type="button" className="botao-contorno"

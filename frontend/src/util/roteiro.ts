@@ -19,7 +19,6 @@ export function roteiroEmTexto(titulo: string, cenas: Cena[]): string {
   const blocos = cenas.map((c, i) => [
     `CENA ${i + 1}  |  ${faixaDeTempo(c)}`,
     `NARRAÇÃO: ${c.fala}`,
-    `NA TELA: ${c.texto_tela ?? ""}`,
     `AÇÃO E IMAGENS: ${c.visual}`,
   ].join("\n"));
   return [`ROTEIRO: ${titulo}`, `Duração: ${formatarTempo(duracaoTotal(cenas))}`, "", blocos.join("\n\n"), ""].join("\n");
@@ -30,19 +29,19 @@ const celula = (v: string) => `"${v.replace(/"/g, '""')}"`;
 /** Planilha (Excel, Google Planilhas): uma linha por cena. O BOM no início faz o Excel ler os acentos. */
 export function roteiroEmCsv(cenas: Cena[]): string {
   const linhas = [
-    ["Cena", "Tempo", "Narração", "Texto na tela", "Ação e imagens"],
-    ...cenas.map((c, i) => [String(i + 1), faixaDeTempo(c), c.fala, c.texto_tela ?? "", c.visual]),
+    ["Cena", "Tempo", "Narração", "Ação e imagens"],
+    ...cenas.map((c, i) => [String(i + 1), faixaDeTempo(c), c.fala, c.visual]),
   ];
-  return "﻿" + linhas.map((l) => l.map(celula).join(";")).join("\r\n") + "\r\n";
+  return "\uFEFF" + linhas.map((l) => l.map(celula).join(";")).join("\r\n") + "\r\n";
 }
 
 /** Tabela em Markdown, como a que o time de produção costuma usar. */
 export function roteiroEmMarkdown(titulo: string, cenas: Cena[]): string {
   const limpa = (v: string) => v.replace(/\|/g, "/").replace(/\s+/g, " ").trim();
-  const linhas = cenas.map((c) => `| ${faixaDeTempo(c)} | ${limpa(c.fala)} | ${limpa(c.visual)} | ${limpa(c.texto_tela ?? "")} |`);
+  const linhas = cenas.map((c) => `| ${faixaDeTempo(c)} | ${limpa(c.fala)} | ${limpa(c.visual)} |`);
   return [
     `# Roteiro: ${titulo}`, "",
-    "| Tempo | Narração | Ação e imagens | Texto na tela |", "| --- | --- | --- | --- |",
+    "| Tempo | Narração | Ação e imagens |", "| --- | --- | --- |",
     ...linhas, "",
   ].join("\n");
 }

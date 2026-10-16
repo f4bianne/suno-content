@@ -15,6 +15,7 @@ export function celulasDosEventos(eventos: Evento[]): Record<string, EstadoCelul
     if (!e.nivel || !e.formato) continue;
     const k = chaveCelula(e.nivel, e.formato);
     if (e.tipo === "gerando") m[k] = { fase: "gerando", tentativa: e.tentativa ?? 1 };
+    else if (e.tipo === "revisando") m[k] = { fase: "revisando", tentativa: e.tentativa ?? 1 };
     else if (e.tipo === "avaliado") m[k] = { fase: "avaliado", tentativa: e.tentativa ?? 1, aprovado: e.aprovado };
     else if (e.tipo === "ramo_fim") m[k] = { fase: "fim", tentativa: e.tentativas ?? 1, status: e.status };
   }

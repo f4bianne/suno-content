@@ -7,7 +7,7 @@ export const ROTULO_NIVEL: Record<Nivel, string> = { iniciante: "Iniciante", int
 export const ROTULO_FORMATO: Record<Formato, string> = { artigo: "Artigo", carrossel: "Carrossel", video: "Vídeo curto" };
 
 export interface Fato { id: string; texto: string; numeros: string[]; entidades: string[]; trecho_origem: string }
-export interface Cena { inicio_s: number; fim_s: number; fala: string; visual: string; texto_tela?: string }
+export interface Cena { inicio_s: number; fim_s: number; fala: string; visual: string }
 export type Conteudo = { titulo: string; corpo: string; conclusao: string } | { slides: string[] } | { cenas: Cena[] };
 
 export interface Veredito {
@@ -17,7 +17,10 @@ export interface Veredito {
 export interface Metricas {
   flesch?: number; cobertura?: number; fatos_ausentes?: string[];
   densidade?: { contagem: Record<string, number>; nivel23_por_100_palavras: number };
+  plano_revisao?: PlanoRevisao;
 }
+/** O que o agente revisor orientou para a tentativa seguinte. */
+export interface PlanoRevisao { diagnostico: string; acoes: string[]; manter: string[] }
 export interface Tentativa {
   n: number; aprovado: boolean; falhas: string[]; metricas: Metricas; veredito: Veredito | null; conteudo: Conteudo | null;
   segundos_geracao: number; segundos_avaliacao: number; chamadas_llm: number;
@@ -51,4 +54,4 @@ export interface Relacionado {
 export interface TermoGlossario { termo: string; nivel: number; formas: string[]; explicacao: string; ambiguo: boolean }
 
 /** Estado de um dos 9 conteúdos enquanto o servidor trabalha. */
-export type EstadoCelula = { fase: "gerando" | "avaliado" | "fim"; tentativa: number; aprovado?: boolean; status?: string };
+export type EstadoCelula = { fase: "gerando" | "avaliado" | "revisando" | "fim"; tentativa: number; aprovado?: boolean; status?: string };

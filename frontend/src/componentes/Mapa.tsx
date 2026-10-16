@@ -44,7 +44,7 @@ function Linha({ nivel, resultado, ao_vivo, selecao, onSelecionar, ocupado, pedi
           miudo = n === 1 ? "de primeira" : `${n} tentativas`;
         } else if (vivo) {
           classe = "viva";
-          estado = vivo.fase === "gerando" ? "Escrevendo…" : vivo.aprovado ? "Finalizando…" : "Refazendo…";
+          estado = vivo.fase === "gerando" ? "Escrevendo…" : vivo.fase === "revisando" ? "Planejando a revisão…" : vivo.aprovado ? "Finalizando…" : "Refazendo…";
           miudo = `tentativa ${vivo.tentativa}`;
         } else if (ocupado && pedidos && !pedidos.includes(chaveCelula(nivel, f))) {
           estado = "Não pedido"; miudo = "fora desta geração";

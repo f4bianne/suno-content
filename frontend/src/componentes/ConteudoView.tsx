@@ -57,7 +57,6 @@ export default function ConteudoView({ conteudo, termos }: Props) {
           </div>
           <dl className="cena-campos">
             <div><dt>Narração</dt><dd className="narracao">{T(c.fala)}</dd></div>
-            {c.texto_tela && <div><dt>Texto na tela</dt><dd className="legenda-tela">{c.texto_tela}</dd></div>}
             <div><dt>{i === 0 ? "Ação · gancho visual" : "Ação e imagens"}</dt><dd>{c.visual}</dd></div>
           </dl>
         </li>

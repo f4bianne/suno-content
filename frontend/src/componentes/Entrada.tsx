@@ -14,7 +14,7 @@ export default function Entrada({ ocupado, erro, aviso, onGerar }: Props) {
   const [link, setLink] = useState("");
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [prioritario, setPrioritario] = useState<Nivel | "">("");
-  const [tentativas, setTentativas] = useState(3);
+  const [tentativas, setTentativas] = useState(2);
   const [forcar, setForcar] = useState(false);
   const [niveis, setNiveis] = useState<Nivel[]>([...NIVEIS]);
   const [formatos, setFormatos] = useState<Formato[]>([...FORMATOS]);
@@ -111,7 +111,7 @@ export default function Entrada({ ocupado, erro, aviso, onGerar }: Props) {
           <div className="campo">
             <label htmlFor="tent">Tentativas por conteúdo</label>
             <select id="tent" value={tentativas} onChange={(e) => setTentativas(Number(e.target.value))}>
-              {[1, 2, 3, 4, 5].map((n) => <option key={n} value={n}>{n}</option>)}
+              {[1, 2].map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           </div>
           <label className="interruptor" style={{ gridColumn: "1 / -1" }}>

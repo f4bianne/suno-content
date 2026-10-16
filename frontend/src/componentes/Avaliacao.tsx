@@ -46,7 +46,18 @@ export default function Avaliacao({ ramo, config }: Props) {
                 Tentativa {i + 1}: <span className={t.aprovado ? "selo ok" : "selo ruim"}>{t.aprovado ? "▲ aprovada" : "▼ reprovada"}</span>
               </span>
               {motivo && <span className="apoio">{t.falhas.length > 1 ? `${t.falhas.length} problemas. Primeiro: ` : "Problema: "}{motivo}</span>}
-              {!t.aprovado && i < ramo.tentativas.length - 1 && <span className="legenda">O relatório de falhas foi entregue ao gerador, que reescreveu.</span>}
+              {!t.aprovado && i < ramo.tentativas.length - 1 && (
+                t.metricas.plano_revisao ? (
+                  <details className="plano-revisor">
+                    <summary className="legenda">O revisor leu as falhas e montou um plano para a reescrita</summary>
+                    <p className="apoio">{t.metricas.plano_revisao.diagnostico}</p>
+                    <ol>{t.metricas.plano_revisao.acoes.map((a, k) => <li key={k}>{a}</li>)}</ol>
+                    {t.metricas.plano_revisao.manter.length > 0 && (
+                      <p className="legenda">Manter: {t.metricas.plano_revisao.manter.join(" · ")}</p>
+                    )}
+                  </details>
+                ) : <span className="legenda">O relatório de falhas foi entregue ao gerador, que reescreveu.</span>
+              )}
             </div>
           );
         })}

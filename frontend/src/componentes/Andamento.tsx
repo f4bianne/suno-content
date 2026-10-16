@@ -10,6 +10,7 @@ function descrever(e: Evento): { texto: string; classe?: string } | null {
     case "cache": return { texto: "Esse resultado já existia: nenhum modelo foi chamado", classe: "ok" };
     case "extraindo": return { texto: "Extraindo os fatos principais…" };
     case "ancora": return { texto: `${e.fatos} fatos extraídos` };
+    case "revisando": return { texto: `${onde}: o revisor está planejando a reescrita` };
     case "gerando": return { texto: `${onde}: escrevendo (tentativa ${e.tentativa})` };
     case "avaliado": return e.aprovado
       ? { texto: `${onde}: aprovado`, classe: "ok" }

@@ -66,7 +66,7 @@ describe("Resultado", () => {
     expect(container.textContent).toContain("A Selic subiu.");   // "Selic" está marcada, então o texto vem em pedaços
     expect(screen.getByText("Ação · gancho visual")).toBeTruthy();
     expect(screen.getByText("seta para cima")).toBeTruthy();
-    expect(screen.getByText("Selic em alta")).toBeTruthy();                  // texto na tela da primeira cena
+    expect(screen.queryByText("Texto na tela")).toBeNull();
     expect(screen.getByText("0:00–0:20")).toBeTruthy();
   });
 
@@ -189,7 +189,7 @@ describe("Entrada e histórico", () => {
     fireEvent.change(screen.getByLabelText(/Gerar primeiro o nível/), { target: { value: "avancado" } });
     fireEvent.submit(gerar.closest("form")!);
     expect(onGerar).toHaveBeenCalledWith({ tipo: "termo", valor: "Copom" },
-      { niveis: ["iniciante", "intermediario", "avancado"], formatos: ["artigo", "carrossel", "video"], prioritario: "avancado", tentativas: 3, forcar: false });
+      { niveis: ["iniciante", "intermediario", "avancado"], formatos: ["artigo", "carrossel", "video"], prioritario: "avancado", tentativas: 2, forcar: false });
   });
 
   it("as sugestões preenchem o campo e as três abas existem", () => {
@@ -211,7 +211,7 @@ describe("Entrada e histórico", () => {
     fireEvent.change(campo, { target: { value: "https://www.bcb.gov.br/x.pdf" } });
     expect(gerar.disabled).toBe(false);
     fireEvent.submit(gerar.closest("form")!);
-    expect(onGerar).toHaveBeenCalledWith({ tipo: "link", valor: "https://www.bcb.gov.br/x.pdf" }, expect.objectContaining({ tentativas: 3 }));
+    expect(onGerar).toHaveBeenCalledWith({ tipo: "link", valor: "https://www.bcb.gov.br/x.pdf" }, expect.objectContaining({ tentativas: 2 }));
   });
 
   it("aba de PDF pede o arquivo e mostra erro e estado ocupado", () => {
@@ -292,7 +292,7 @@ describe("App", () => {
     await screen.findByText("Gerando");
     const post = chamadas.find((c) => c.metodo === "POST")!;
     expect(post.url).toBe("/api/jobs");
-    expect(JSON.parse(post.corpo!)).toMatchObject({ tipo: "termo", valor: "Copom", tentativas: 3 });
+    expect(JSON.parse(post.corpo!)).toMatchObject({ tipo: "termo", valor: "Copom", tentativas: 2 });
 
     await waitFor(() => expect(FalsoEventSource.ultimo).not.toBeNull());
     const es = FalsoEventSource.ultimo!;
