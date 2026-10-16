@@ -19,7 +19,8 @@ _MARCADORES_FRASE = re.compile(
 # Logo antes do termo: "a taxa chamada Selic", "conhecido como Copom".
 _LOGO_ANTES = re.compile(r"(chamad[oa]s?|conhecid[oa]s? como|denominad[oa]s?|sigla|sigla de)\s*$", re.IGNORECASE)
 # Logo depois do termo: "(definição)", "— definição", ", que é ...", ", ou seja ...".
-_LOGO_APOS = re.compile(r"^\s*(\(|—|–| - |,\s*(que|ou seja|isto é|a|o)\b|\s+é\s+(a|o|um|uma)\b)", re.IGNORECASE)
+_LOGO_APOS = re.compile(
+    r"^\s*(\(|—|–| - |,\s*(que|ou seja|isto é|a|o)\b|\s+é\s+(a|o|um|uma)\b|\s+que\s+(é|são|significa|representa)\b)", re.IGNORECASE)
 
 
 @dataclass(frozen=True)

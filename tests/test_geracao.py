@@ -4,7 +4,7 @@ from pydantic import ValidationError
 from avaliador import avaliar as av
 from avaliador import glossario
 from avaliador.formatos import Artigo, Carrossel, Roteiro
-from geracao import grafo, prompts, schemas
+from geracao import grafo, prompts, revisor, schemas
 from geracao.ramo import construir_ramo, rodar_ramo
 from tests.fixtures_geracao import ANCORA, GeradorFalso, JuizFalso, bom
 
@@ -260,7 +260,7 @@ def test_feedback_de_numeros_lista_os_permitidos():
 def test_relatorio_pede_para_manter_o_que_estava_certo():
     from avaliador.formatos import Artigo
     r = prompts.relatorio_de_falhas(["[cobertura] x"], Artigo(titulo="t", corpo="c", conclusao="k"))
-    assert "Mantenha o que já estava certo" in r
+    assert "copie literalmente tudo que já estava certo" in r
 
 
 def test_prompt_do_video_pede_texto_cheio_e_uma_cena_por_fato():
@@ -313,3 +313,30 @@ def test_iniciante_recebe_a_explicacao_pronta_dos_termos_do_documento():
     assert "hiato do produto" not in txt.split("TERMOS DESTE DOCUMENTO")[1].split("FORMATO")[0]   # não está nos fatos
     avancado = prompts.sistema("avancado", "artigo", termos, {"formatos": {"artigo": {"palavras": [250, 900]}}}, ANCORA)
     assert "TERMOS DESTE DOCUMENTO" not in avancado
+
+
+def test_termo_proibido_no_iniciante_lista_as_variantes_que_os_fatos_usam():
+    from avaliador.ancora import Ancora, Fato
+    termos = [glossario.Termo("inflação subjacente", 3, "indices", ("inflação subjacente", "núcleos", "núcleo da inflação"), False,
+                              "medida que tira da inflação os itens mais voláteis")]
+    ancora = Ancora(fatos=[Fato(id="f1", texto="A média dos núcleos ficou em 3,9%", numeros=["3,9"], entidades=[],
+                                trecho_origem="a média dos núcleos ficou em 3,9%")])
+    cfg_a = {"formatos": {"artigo": {"palavras": [250, 900]}}}
+    ini = prompts.sistema("iniciante", "artigo", termos, cfg_a, ancora)
+    assert "inflação subjacente (vale também para: núcleos, núcleo da inflação) é PROIBIDO" in ini
+    assert "medida que tira da inflação os itens mais voláteis" in ini
+    inter = prompts.sistema("intermediario", "artigo", termos, cfg_a, ancora)
+    assert "inflação subjacente (vale também para: núcleos, núcleo da inflação), que é medida que tira" in inter
+
+
+def test_cobertura_no_iniciante_pede_frase_propria_e_curta_para_cada_fato():
+    from avaliador.avaliar import Falha
+    from geracao.ramo import _dica
+    f = Falha("cobertura", "cobertura 50% abaixo de 80%; ausentes: f1")
+    ini = _dica(f, ANCORA, {"fatos_ausentes": ["f1"]}, None, "iniciante")
+    assert "frase só dele, com até 15 palavras" in ini
+    assert "frase só dele" not in _dica(f, ANCORA, {"fatos_ausentes": ["f1"]}, None, "avancado")
+
+
+def test_revisor_e_lembrado_de_que_acrescentar_fato_derruba_a_leitura():
+    assert "Acrescentar fatos costuma piorar a legibilidade" in revisor.SISTEMA

@@ -14,7 +14,7 @@ from avaliador import avaliar as av
 from avaliador import formatos, glossario
 from avaliador.ancora import Ancora
 from avaliador.juiz import Cliente, julgar, schema_plano
-from geracao import prompts, revisor as agente_revisor, schemas
+from geracao import ajustes, prompts, revisor as agente_revisor, schemas
 
 
 class Tentativa(BaseModel):
@@ -49,9 +49,10 @@ class EstadoRamo(TypedDict, total=False):
     status: str
     tentativas: list[Tentativa]
     juiz_indisponivel: int
+    explicacoes_inseridas: list[str]
 
 
-def _dica(f: av.Falha, ancora: Ancora, metricas: dict, indice: glossario.Indice | None = None) -> str:
+def _dica(f: av.Falha, ancora: Ancora, metricas: dict, indice: glossario.Indice | None = None, nivel: str | None = None) -> str:
     """Mensagem da falha acrescida de uma orientação acionável."""
     extra = ""
     if f.metrica == "legibilidade":
@@ -66,6 +67,8 @@ def _dica(f: av.Falha, ancora: Ancora, metricas: dict, indice: glossario.Indice 
         faltou = "; ".join(f"[{i}] {por_id.get(i, '')}" for i in metricas.get("fatos_ausentes", []))
         extra = (f" Inclua estes fatos com seus números, um por frase (ou cena), e mantenha o que já estava certo: {faltou}."
                  if faltou else "")
+        if faltou and nivel == "iniciante":   # acrescentar fato é o que derruba a leitura fácil: cada um em frase própria e curta
+            extra += " Cada fato novo entra em uma frase só dele, com até 15 palavras e sem termo técnico, para a leitura continuar fácil."
     elif f.metrica == "formato":
         tam = re.search(r"com (\d+) palavras \(esperado de (\d+) a (\d+)\)", f.mensagem)
         if tam and int(tam[1]) < int(tam[2]):
@@ -73,6 +76,11 @@ def _dica(f: av.Falha, ancora: Ancora, metricas: dict, indice: glossario.Indice 
             extra = (f" O texto tem {n} palavras e o mínimo é {lo}: faltam pelo menos {lo - n}. Reescreva com cerca de {lo + 120} "
                      "palavras: desenvolva cada fato com contexto e consequências gerais, sem inventar número ou dado, e mantenha "
                      "o que já estava certo. Não comprima nem resuma.")
+        elif re.search(r"slide (\d+) com (\d+) caracteres \(máximo (\d+)\)", f.mensagem):
+            m = re.search(r"slide (\d+) com (\d+) caracteres \(máximo (\d+)\)", f.mensagem)
+            n, hi = int(m[2]), int(m[3])
+            extra = (f" O slide {m[1]} tem {n} caracteres e o máximo é {hi}: corte pelo menos {n - hi + 20}, para ficar com "
+                     f"margem. Tire o que for menos importante daquele slide, sem mexer nos outros.")
         else:
             extra = " Respeite os limites do formato: corte o que for menos importante em vez de comprimir o texto."
     elif f.metrica == "numeros":
@@ -92,9 +100,30 @@ def _dica(f: av.Falha, ancora: Ancora, metricas: dict, indice: glossario.Indice 
     return f"[{f.metrica}] {f.mensagem}.{extra}"
 
 
+DICAS_DE_CRITERIO = [
+    ("analogia", " Dê uma analogia curta do dia a dia (a feira, a conta de casa, um empréstimo entre amigos) para CADA termo "
+                 "técnico, na primeira vez em que ele aparece, no molde 'X é como ...'. Basta um termo sem analogia para reprovar."),
+    ("bolso", " Inclua uma frase que diga o que muda no bolso de quem lê (parcela, preço, rendimento da poupança, dívida), como "
+              "consequência geral e sem número novo."),
+    ("alocação", " Inclua uma frase (no carrossel, um slide inteiro) que diga o que os dados sugerem para renda fixa, renda "
+                 "variável ou câmbio, como 'com os juros nesse patamar, a renda fixa tende a render mais e a renda variável "
+                 "tende a ficar mais pressionada'. Só consequência geral, sem número novo e sem recomendar compra ou venda."),
+    ("vocabulário de mercado", " Use os termos de mercado sem explicar o básico (CDI, Selic, IPCA) e sem analogias infantis."),
+    ("jargão", " Mantenha os termos técnicos do documento, sem trocá-los por palavras simples."),
+    ("implicações", " Acrescente uma frase com a implicação analítica que o documento só sugere (o que isso significa para a "
+                    "trajetória dos juros, do crédito ou da inflação), sem inventar número ou fato."),
+]
+
+
+def _dica_do_criterio(criterio: str) -> str:
+    """Orientação acionável para cada item de rubrica do juiz: o que escrever para o critério passar."""
+    texto = criterio.lower()
+    return next((dica for chave, dica in DICAS_DE_CRITERIO if chave in texto), "")
+
+
 def _falhas_do_juiz(v) -> list[str]:
     itens = [f"[juiz] afirmação sem suporte nos fatos (remova ou reescreva): {a}" for a in v.afirmacoes_sem_suporte]
-    itens += [f"[juiz] critério do nível não atendido: {c}" for c in v.criterios_nao_atendidos]
+    itens += [f"[juiz] critério do nível não atendido: {c}{_dica_do_criterio(c)}" for c in v.criterios_nao_atendidos]
     itens += [f"[juiz] fato ausente: {i}" for i in v.fatos_ausentes]
     if not itens and not v.aprovado:
         itens.append(f"[juiz] notas baixas (fidelidade {v.nota_fidelidade}, nível {v.nota_adequacao_nivel}): {v.justificativa}")
@@ -113,7 +142,7 @@ def construir_ramo(gerador: Cliente, juiz: Cliente, indice: glossario.Indice, cf
     def no_gerar(e: EstadoRamo) -> EstadoRamo:
         n = e.get("tentativa", 0) + 1
         avisar({"tipo": "gerando", "nivel": e["nivel"], "formato": e["formato"], "tentativa": len(e.get("tentativas", [])) + 1})
-        t0 = time.time()
+        t0, inseridas = time.time(), []
         try:
             bruto = gerador.completar_json(
                 prompts.sistema(e["nivel"], e["formato"], termos, cfg, e["ancora"]),
@@ -121,9 +150,11 @@ def construir_ramo(gerador: Cliente, juiz: Cliente, indice: glossario.Indice, cf
                 schema_plano(schemas.SCHEMA_POR_FORMATO[e["formato"]]),
             )
             conteudo, erro = schemas.para_conteudo(e["formato"], bruto), None
+            conteudo, inseridas = ajustes.explicar_termos(conteudo, e["nivel"], indice, cfg)
         except Exception as ex:   # JSON fora do schema, falha de rede depois dos retries etc.
             conteudo, erro = None, f"{type(ex).__name__}: {str(ex)[:200]}"
-        return {"tentativa": n, "conteudo": conteudo, "erro_geracao": erro, "segundos_geracao": time.time() - t0}
+        return {"tentativa": n, "conteudo": conteudo, "erro_geracao": erro, "segundos_geracao": time.time() - t0,
+                "explicacoes_inseridas": inseridas}
 
     def no_avaliar(e: EstadoRamo) -> EstadoRamo:
         t0, conteudo, indisponivel = time.time(), e["conteudo"], False
@@ -135,7 +166,9 @@ def construir_ramo(gerador: Cliente, juiz: Cliente, indice: glossario.Indice, cf
             tent.conteudo = schemas.conteudo_em_dict(conteudo)
             res = av.avaliar(conteudo, e["nivel"], indice, e["ancora"], cfg)
             tent.metricas = res.metricas
-            tent.falhas = [_dica(f, e["ancora"], res.metricas, indice) for f in res.falhas]
+            if e.get("explicacoes_inseridas"):
+                tent.metricas["explicacoes_inseridas"] = e["explicacoes_inseridas"]
+            tent.falhas = [_dica(f, e["ancora"], res.metricas, indice, e["nivel"]) for f in res.falhas]
             if res.aprovado:   # o juiz só roda depois das regras: poupa chamadas e as regras já dão o feedback
                 for volta in range(tentativas_juiz):   # limite de uso passa com um pouco de espera
                     try:

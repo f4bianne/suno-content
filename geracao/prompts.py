@@ -8,7 +8,9 @@ PERFIL = {
     "iniciante": (
         "leitores iniciantes. Zero jargão financeiro sem analogia do dia a dia. Frases curtas (até 15 palavras) e palavras "
         "simples. Foco no impacto prático no bolso de quem lê (parcela, preço, rendimento da poupança, dívida). OBRIGATÓRIO: "
-        "(1) traduza o conceito principal com uma analogia do dia a dia (feira, conta de casa, empréstimo entre amigos) e "
+        "(1) TODO conceito financeiro que aparecer (cada termo técnico) ganha, na primeira vez em que aparece, uma analogia "
+        "curta do dia a dia (feira, conta de casa, empréstimo entre amigos, fila do banco), no molde \"X é como ...\"; o juiz "
+        "reprova o texto se um só conceito ficar sem analogia; "
         "(2) inclua uma frase que diga o que muda no bolso de quem lê, como consequência geral e sem números novos."
     ),
     "intermediario": (
@@ -69,10 +71,16 @@ def termos_do_documento(nivel: str, termos: list[Termo], ancora: Ancora | None) 
         return ""
     linhas = []
     for t in list(vistos.values())[:15]:
+        # O avaliador também pega as variantes do termo (por exemplo "núcleos" para "inflação subjacente"), e os fatos
+        # costumam usá-las: sem listar, o modelo copia a variante do fato e reprova.
+        outras = [f for f in t.formas if f.lower() != t.termo.lower()]
+        tambem = f" (vale também para: {', '.join(outras[:6])})" if outras else ""
         if nivel == "iniciante" and t.nivel >= 3:
-            linhas.append(f"- {t.termo} (proibido): troque por palavras simples, como \"{t.explicacao}\".")
+            linhas.append(f"- {t.termo}{tambem} é PROIBIDO, mesmo explicado, e os fatos podem usá-lo: não copie, "
+                          f"diga com palavras simples, como \"{t.explicacao}\".")
         else:
-            linhas.append(f"- {t.termo}, que é {t.explicacao}")
+            analogia = "; em seguida, uma analogia do dia a dia no molde \"é como ...\"" if nivel == "iniciante" else ""
+            linhas.append(f"- {t.termo}{tambem}, que é {t.explicacao}{analogia}")
     return (
         "TERMOS DESTE DOCUMENTO, COM A EXPLICAÇÃO PRONTA. A PRIMEIRA vez que um deles aparece, em qualquer parte do texto "
         "(inclusive título, gancho e fala), escreva-o já com a explicação, exatamente neste molde; depois pode usar só o "
@@ -95,7 +103,7 @@ def instrucao_formato(formato: str, cfg: dict) -> str:
         c = f["carrossel"]["caracteres_por_slide"]
         return (f"FORMATO: carrossel. gancho (slide 1, que prende a atenção), slides_corpo (de {lo - 2} a {hi - 2} slides) e "
                 f"conclusao (último slide). O total, contando gancho e conclusão, fica entre {lo} e {hi} slides. REGRA DURA: "
-                f"cada slide tem no máximo {c - 30} caracteres (conte; slide acima de {c} é rejeitado). Cada slide de corpo "
+                f"cada slide tem no máximo {c - 50} caracteres (conte; slide acima de {c} é rejeitado, e você tende a passar do que mira). Cada slide de corpo "
                 "traz uma ideia completa. Não cabe tudo: priorize os fatos mais importantes.")
     pmax, pps = f["video"]["duracao_maxima_s"], f["video"]["palavras_por_segundo"]
     minimo, limite = int((pmax - 12) * pps), int((pmax - 4) * pps)     # 120 a 140 palavras: de 48 a 56 s de fala
@@ -114,17 +122,58 @@ def instrucao_formato(formato: str, cfg: dict) -> str:
             "Termo técnico que exige explicação é explicado na própria cena.")
 
 
+DICA_DE_LEITURA = {
+    "iniciante": "frases de 8 a 14 palavras, palavras curtas do dia a dia e um número por frase",
+    "intermediario": "frases de 20 a 28 palavras, com vocabulário de mercado, sem frases telegráficas",
+    "avancado": "frases longas e densas, de 25 a 40 palavras, com vocabulário técnico",
+}
+
+
+def alvo_de_leitura(nivel: str, formato: str, cfg: dict) -> str:
+    """Diz ao gerador a faixa em que o texto será medido e onde mirar, em vez de descobrir isso só no retry."""
+    if "niveis" not in cfg:
+        return ""
+    regras = cfg["niveis"][nivel]
+    lo, hi = regras.get(f"flesch_{formato}", regras["flesch"])
+    return (f"LEITURA: o texto é medido pelo índice Flesch em português, que precisa ficar entre {lo} e {hi}; mire perto de "
+            f"{(lo + min(hi, 100)) // 2}. Para chegar lá: {DICA_DE_LEITURA[nivel]}. Ao incluir um fato com número, não "
+            "alongue a frase: dê a ele uma frase própria.\n")
+
+
+ITEM_DA_RUBRICA = {
+    "iniciante": "uma analogia do dia a dia para cada termo (reprova se um só conceito ficar sem) e uma frase sobre o que muda no "
+                 "bolso de quem lê",
+    "intermediario": "uma frase explícita sobre alocação e tendências: o que os dados sugerem para renda fixa, renda variável ou "
+                     "câmbio, sem recomendar compra ou venda (no carrossel, um slide só para isso)",
+    "avancado": "o jargão do documento preservado e uma frase com a implicação analítica que o documento só sugere, sem inventar",
+}
+
+
+def conferencia_final(ancora: Ancora | None, nivel: str = "") -> str:
+    """Lista de conferência: o que mais reprova na primeira tentativa é fato faltando e item da rubrica do nível esquecido."""
+    if ancora is None or not ancora.fatos:
+        return ""
+    itens = ", ".join(f"{f.id} ({', '.join(f.numeros)})" if f.numeros else f"{f.id} (sem número: cite a ideia)" for f in ancora.fatos)
+    rubrica = f"; (6) o critério do nível: {ITEM_DA_RUBRICA[nivel]}" if nivel in ITEM_DA_RUBRICA else ""
+    return ("CONFERÊNCIA ANTES DE RESPONDER (reprova se falhar em qualquer item): (1) todos estes fatos aparecem, com os números "
+            f"exatos: {itens}; (2) a primeira vez que cada termo da lista aparece, já vem com a explicação; (3) nenhum número "
+            "fora dos fatos; (4) nenhum conselho de compra, venda ou aplicação; (5) o tamanho do formato, contando os "
+            f"caracteres ou palavras{rubrica}. Se algum item falhar, corrija antes de responder.")
+
+
 def sistema(nivel: str, formato: str, termos: list[Termo], cfg: dict, ancora: Ancora | None = None) -> str:
     return (
         "Você adapta documentos financeiros oficiais brasileiros, em português do Brasil, para um público e um formato.\n"
         f"PÚBLICO: {PERFIL[nivel]}\n{regra_de_termos(nivel, termos)}\n{termos_do_documento(nivel, termos, ancora)}"
         f"{instrucao_formato(formato, cfg)}\n"
+        f"{alvo_de_leitura(nivel, formato, cfg)}"
         "REGRAS DE FIDELIDADE:\n"
         "- Use SOMENTE os fatos fornecidos. Todo número citado deve existir nos fatos, escrito igual (não calcule nem arredonde).\n"
         "- Cubra todos os fatos. Se dois forem parecidos, junte-os numa frase mantendo todos os números.\n"
         "- Consequências econômicas gerais (por exemplo, juros altos encarecem o crédito) são permitidas, sem números novos.\n"
         "- Não dê conselho de compra, venda ou aplicação; não use imperativos de investimento.\n"
-        "- Não invente datas, nomes, decisões ou previsões."
+        "- Não invente datas, nomes, decisões ou previsões.\n"
+        f"{conferencia_final(ancora, nivel)}"
     )
 
 
@@ -136,8 +185,10 @@ def relatorio_de_falhas(falhas: list[str], anterior: Conteudo) -> str:
     itens = "\n".join(f"- {x}" for x in falhas)
     return (
         "A VERSÃO ANTERIOR FOI REPROVADA PELO AVALIADOR. Corrija TODOS os problemas abaixo e reescreva por inteiro. "
-        "Mantenha o que já estava certo (fatos, números e termos já aprovados) e mude só o necessário: corrigir um "
-        "problema não pode criar outro.\n"
+        "Esta é a ÚLTIMA tentativa: não haverá outra. Faça uma correção CIRÚRGICA: copie literalmente tudo que já estava certo "
+        "(fatos, números, termos explicados, frases que não têm problema) e altere só os trechos ligados aos problemas "
+        "abaixo. Corrigir um problema não pode criar outro: ao incluir um fato, mantenha o tamanho das frases do nível; ao "
+        "explicar um termo, não alongue o resto.\n"
         f"PROBLEMAS:\n{itens}\n\nVERSÃO ANTERIOR:\n{texto_corrido(anterior)}"
     )
 
