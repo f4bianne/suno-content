@@ -36,7 +36,8 @@ def snapshot(clientes, cfg_avaliacao: dict, max_tentativas: int, max_fatos: int,
     """Foto da configuracao usada, gravada junto de cada execucao."""
     glossario = caminho_glossario or RAIZ / "dados" / "glossario.yaml"
     return {
-        "modelos": {"extrator": _modelo(clientes.extrator), "gerador": _modelo(clientes.gerador), "juiz": _modelo(clientes.juiz)},
+        "modelos": {"extrator": _modelo(clientes.extrator), "gerador": _modelo(clientes.gerador), "juiz": _modelo(clientes.juiz),
+                    **({"revisor": _modelo(clientes.revisor)} if getattr(clientes, "revisor", None) is not None else {})},
         "prompts": {
             "extrator": _sha(extrator.SISTEMA.encode()),
             "juiz": _sha((juiz.SISTEMA_JUIZ + json.dumps(juiz.RUBRICA_POR_NIVEL, sort_keys=True)).encode()),

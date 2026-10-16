@@ -32,13 +32,13 @@ def test_carrossel_valido_e_flesch_por_slide():
 
 
 def test_video_acima_de_60s():
-    r = Roteiro(cenas=[Cena(inicio_s=0, fim_s=70, fala="Oi.", visual="gráfico", texto_tela="Selic em alta")])
+    r = Roteiro(cenas=[Cena(inicio_s=0, fim_s=70, fala="Oi.", visual="gráfico")])
     assert any("máximo 60s" in f for f in verificar(r, CFG))
 
 
 def test_video_com_fala_longa_demais():
     fala = "palavra " * 200   # 200 palavras / 2,5 por segundo = 80 s
-    r = Roteiro(cenas=[Cena(inicio_s=0, fim_s=50, fala=fala, visual="gráfico", texto_tela="Selic em alta")])
+    r = Roteiro(cenas=[Cena(inicio_s=0, fim_s=50, fala=fala, visual="gráfico")])
     assert any("leva cerca de" in f for f in verificar(r, CFG))
 
 
@@ -48,22 +48,9 @@ def test_video_sem_gancho_visual():
 
 
 def test_video_valido():
-    r = Roteiro(cenas=[Cena(inicio_s=0, fim_s=30, fala="A Selic subiu.", visual="seta para cima", texto_tela="Selic em alta"),
-                       Cena(inicio_s=30, fim_s=55, fala="Seu financiamento fica mais caro.", visual="casa", texto_tela="Selic em alta")])
+    r = Roteiro(cenas=[Cena(inicio_s=0, fim_s=30, fala="A Selic subiu.", visual="seta para cima"),
+                       Cena(inicio_s=30, fim_s=55, fala="Seu financiamento fica mais caro.", visual="casa")])
     assert verificar(r, CFG) == []
     assert formato_de(r) == "video"
     assert texto_corrido(r) == "A Selic subiu.\nSeu financiamento fica mais caro."
 
-
-def _cena(**kw):
-    base = dict(inicio_s=0, fim_s=30, fala="A Selic subiu para 14,25% ao ano.", visual="seta para cima", texto_tela="Selic em alta")
-    return Roteiro(cenas=[Cena(**{**base, **kw})])
-
-
-def test_texto_na_tela_obrigatorio_curto_sem_emoji_e_sem_numero_novo():
-    assert verificar(_cena(), CFG) == []
-    assert any("sem texto na tela" in f for f in verificar(_cena(texto_tela=""), CFG))
-    assert any("palavras (máximo 8)" in f for f in verificar(_cena(texto_tela="uma frase longa demais para caber numa legenda de vídeo curto"), CFG))
-    assert any("emoji" in f for f in verificar(_cena(texto_tela="Selic em alta 📈"), CFG))
-    assert any("número 14,50" in f for f in verificar(_cena(texto_tela="Selic a 14,50%"), CFG))
-    assert verificar(_cena(texto_tela="Selic a 14,25%"), CFG) == []     # número que a fala diz é permitido

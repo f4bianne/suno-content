@@ -266,6 +266,50 @@ def test_relatorio_pede_para_manter_o_que_estava_certo():
 def test_prompt_do_video_pede_texto_cheio_e_uma_cena_por_fato():
     cfg = {"formatos": {"video": {"duracao_maxima_s": 60, "palavras_por_segundo": 2.5}}}
     txt = prompts.instrucao_formato("video", cfg)
-    assert "entre 100 e 125 palavras" in txt
+    assert "entre 120 e 140 palavras" in txt
     assert "CADA fato" in txt
     assert "priorize" not in txt          # mandar priorizar derrubava a cobertura dos fatos
+
+
+def test_artigo_curto_pede_para_aumentar_e_nao_para_cortar():
+    from avaliador.avaliar import Falha
+    from geracao.ramo import _dica
+    curto = _dica(Falha("formato", "artigo com 172 palavras (esperado de 250 a 900)"), ANCORA, {})
+    assert "faltam pelo menos 78" in curto and "cerca de 370" in curto and "corte" not in curto
+    longo = _dica(Falha("formato", "artigo com 950 palavras (esperado de 250 a 900)"), ANCORA, {})
+    assert "corte" in longo
+
+
+def test_prompt_do_artigo_mira_acima_do_minimo():
+    cfg = {"formatos": {"artigo": {"palavras": [250, 900]}}}
+    txt = prompts.instrucao_formato("artigo", cfg)
+    assert "entre 400 e 650 palavras" in txt and "4 a 5 parágrafos" in txt
+
+
+def test_tempo_do_roteiro_sai_do_tamanho_da_fala():
+    cenas = [{"fala": " ".join(["palavra"] * 25), "visual": "a"}, {"fala": " ".join(["palavra"] * 50), "visual": "b"},
+             {"fala": "Fim.", "visual": "c"}]
+    r = schemas.para_conteudo("video", {"cenas": cenas})
+    marcas = [(c.inicio_s, c.fim_s) for c in r.cenas]
+    assert marcas == [(0, 10), (10, 30), (30, 31)]          # 25 e 50 palavras a 2,5 por segundo; a última, no mínimo 1 s
+    assert all(c.fim_s > c.inicio_s for c in r.cenas) and r.cenas[0].inicio_s == 0
+    assert all(a.fim_s == b.inicio_s for a, b in zip(r.cenas, r.cenas[1:]))   # sem lacunas
+
+
+def test_prompt_do_video_pede_falas_mais_longas_e_sem_texto_na_tela():
+    cfg = {"formatos": {"video": {"duracao_maxima_s": 60, "palavras_por_segundo": 2.5}}}
+    txt = prompts.instrucao_formato("video", cfg)
+    assert "entre 120 e 140 palavras" in txt and "de 15 a 30 palavras" in txt
+    assert "texto_tela" not in txt and "legenda" not in txt
+
+
+def test_iniciante_recebe_a_explicacao_pronta_dos_termos_do_documento():
+    termos = [glossario.Termo("Selic", 2, "juros", ("Selic",), False, "a taxa basica de juros da economia"),
+              glossario.Termo("hiato do produto", 3, "macro", ("hiato do produto",), False, "folga da economia"),
+              glossario.Termo("IPCA", 2, "inflacao", ("IPCA",), False, "o indice oficial de inflacao")]
+    txt = prompts.sistema("iniciante", "artigo", termos, {"formatos": {"artigo": {"palavras": [250, 900]}}}, ANCORA)
+    assert "Selic, que é a taxa basica de juros da economia" in txt
+    assert "IPCA, que é o indice oficial de inflacao" in txt
+    assert "hiato do produto" not in txt.split("TERMOS DESTE DOCUMENTO")[1].split("FORMATO")[0]   # não está nos fatos
+    avancado = prompts.sistema("avancado", "artigo", termos, {"formatos": {"artigo": {"palavras": [250, 900]}}}, ANCORA)
+    assert "TERMOS DESTE DOCUMENTO" not in avancado

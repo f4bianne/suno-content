@@ -42,7 +42,8 @@ def gerar(a):
     indice = glossario.Indice(glossario.carregar())
     repo = Repositorio()
     extrator, juiz = clientes_groq()
-    clientes = grafo.Clientes(extrator=extrator, gerador=ClienteGemini(), juiz=juiz)
+    gemini = ClienteGemini()
+    clientes = grafo.Clientes(extrator=extrator, gerador=gemini, juiz=juiz, revisor=gemini)
     caminhos = [Path(p) for p in (a.pdf or PADRAO)]
     faltando = [str(c) for c in caminhos if not c.exists()]
     if faltando:
@@ -80,7 +81,7 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     g = sub.add_parser("gerar")
     g.add_argument("--pdf", action="append", help="caminho de um PDF (pode repetir); sem isso, usa os documentos padrao")
-    g.add_argument("--tentativas", type=int, default=3)
+    g.add_argument("--tentativas", type=int, default=2)
     g.add_argument("--concorrencia", type=int, default=3)
     g.add_argument("--forcar", action="store_true")
     r = sub.add_parser("relatorio")

@@ -14,7 +14,7 @@ from avaliador import avaliar as av
 from avaliador import formatos, glossario
 from avaliador.ancora import Ancora
 from avaliador.juiz import Cliente, julgar, schema_plano
-from geracao import prompts, schemas
+from geracao import prompts, revisor as agente_revisor, schemas
 
 
 class Tentativa(BaseModel):
@@ -67,7 +67,14 @@ def _dica(f: av.Falha, ancora: Ancora, metricas: dict, indice: glossario.Indice 
         extra = (f" Inclua estes fatos com seus números, um por frase (ou cena), e mantenha o que já estava certo: {faltou}."
                  if faltou else "")
     elif f.metrica == "formato":
-        extra = " Respeite os limites do formato: corte o que for menos importante em vez de comprimir o texto."
+        tam = re.search(r"com (\d+) palavras \(esperado de (\d+) a (\d+)\)", f.mensagem)
+        if tam and int(tam[1]) < int(tam[2]):
+            n, lo = int(tam[1]), int(tam[2])
+            extra = (f" O texto tem {n} palavras e o mínimo é {lo}: faltam pelo menos {lo - n}. Reescreva com cerca de {lo + 120} "
+                     "palavras: desenvolva cada fato com contexto e consequências gerais, sem inventar número ou dado, e mantenha "
+                     "o que já estava certo. Não comprima nem resuma.")
+        else:
+            extra = " Respeite os limites do formato: corte o que for menos importante em vez de comprimir o texto."
     elif f.metrica == "numeros":
         validos = sorted({n for x in ancora.fatos for n in x.numeros})
         extra = (" Remova ou corrija: só valem números que estão nos fatos."
@@ -94,8 +101,9 @@ def _falhas_do_juiz(v) -> list[str]:
     return itens
 
 
-def construir_ramo(gerador: Cliente, juiz: Cliente, indice: glossario.Indice, cfg: dict, max_tentativas: int = 3,
-                   tentativas_juiz: int = 3, espera_juiz_s: float = 20.0, observador: Callable[[dict], None] | None = None):
+def construir_ramo(gerador: Cliente, juiz: Cliente, indice: glossario.Indice, cfg: dict, max_tentativas: int = 2,
+                   tentativas_juiz: int = 3, espera_juiz_s: float = 20.0, observador: Callable[[dict], None] | None = None,
+                   revisor: Cliente | None = None):
     termos = indice.termos
 
     def avisar(evento: dict) -> None:
@@ -108,7 +116,7 @@ def construir_ramo(gerador: Cliente, juiz: Cliente, indice: glossario.Indice, cf
         t0 = time.time()
         try:
             bruto = gerador.completar_json(
-                prompts.sistema(e["nivel"], e["formato"], termos, cfg),
+                prompts.sistema(e["nivel"], e["formato"], termos, cfg, e["ancora"]),
                 prompts.usuario(e["ancora"], e.get("feedback")),
                 schema_plano(schemas.SCHEMA_POR_FORMATO[e["formato"]]),
             )
@@ -167,16 +175,35 @@ def construir_ramo(gerador: Cliente, juiz: Cliente, indice: glossario.Indice, cf
             return "fim"
         return "bloquear" if e["tentativa"] >= max_tentativas else "refazer"
 
+    def no_revisar(e: EstadoRamo) -> EstadoRamo:
+        """O revisor transforma as falhas em um plano de edição para a próxima tentativa. Se falhar, segue sem plano."""
+        conteudo = e.get("conteudo")
+        if revisor is None or conteudo is None or not e.get("tentativas"):
+            return {}
+        ultima = e["tentativas"][-1]
+        avisar({"tipo": "revisando", "nivel": e["nivel"], "formato": e["formato"], "tentativa": ultima.n})
+        try:
+            plano = agente_revisor.planejar(revisor, e["nivel"], e["formato"], e["ancora"], formatos.texto_corrido(conteudo),
+                                            ultima.falhas, termos)
+        except Exception:
+            return {}
+        ultima.metricas["plano_revisao"] = plano.model_dump()
+        ultima.chamadas_llm += 1
+        base = e.get("feedback") or ""
+        return {"feedback": "\n\n".join([base, agente_revisor.plano_em_texto(plano)])}
+
     def no_bloquear(e: EstadoRamo) -> EstadoRamo:
         return {"status": "bloqueado"}
 
     g = StateGraph(EstadoRamo)
     g.add_node("gerar", no_gerar)
     g.add_node("avaliar", no_avaliar)
+    g.add_node("revisar", no_revisar)
     g.add_node("bloquear", no_bloquear)
     g.add_edge(START, "gerar")
     g.add_edge("gerar", "avaliar")
-    g.add_conditional_edges("avaliar", decidir, {"fim": END, "refazer": "gerar", "bloquear": "bloquear"})
+    g.add_conditional_edges("avaliar", decidir, {"fim": END, "refazer": "revisar", "bloquear": "bloquear"})
+    g.add_edge("revisar", "gerar")
     g.add_edge("bloquear", END)
     return g.compile()
 

@@ -1,4 +1,5 @@
 """Prompts do gerador: perfil do nível, instruções do formato e relatório de falhas para a nova tentativa."""
+from avaliador import glossario
 from avaliador.ancora import Ancora
 from avaliador.formatos import Conteudo, texto_corrido
 from avaliador.glossario import Termo
@@ -47,12 +48,48 @@ def regra_de_termos(nivel: str, termos: list[Termo]) -> str:
     )
 
 
+_INDICES: dict[int, glossario.Indice] = {}
+
+
+def termos_do_documento(nivel: str, termos: list[Termo], ancora: Ancora | None) -> str:
+    """Termos do glossário que aparecem nos fatos deste documento, cada um com a explicação pronta.
+
+    É o que mais reprova no nível iniciante: o termo aparece e a explicação fica para depois. Aqui o gerador já recebe
+    a forma exata de escrevê-lo na primeira vez (o avaliador aceita ", que é ..." logo depois do termo)."""
+    if ancora is None or nivel == "avancado":
+        return ""
+    indice = _INDICES.setdefault(id(termos), glossario.Indice(termos))
+    fonte = "\n".join(f"{f.texto} {f.trecho_origem}" for f in ancora.fatos)
+    minimo = 2 if nivel == "iniciante" else 3     # a partir de que nível o termo precisa de explicação
+    vistos: dict[str, Termo] = {}
+    for oc in indice.encontrar(fonte):
+        if oc.termo.nivel >= minimo and oc.termo.explicacao and oc.termo.termo not in vistos:
+            vistos[oc.termo.termo] = oc.termo
+    if not vistos:
+        return ""
+    linhas = []
+    for t in list(vistos.values())[:15]:
+        if nivel == "iniciante" and t.nivel >= 3:
+            linhas.append(f"- {t.termo} (proibido): troque por palavras simples, como \"{t.explicacao}\".")
+        else:
+            linhas.append(f"- {t.termo}, que é {t.explicacao}")
+    return (
+        "TERMOS DESTE DOCUMENTO, COM A EXPLICAÇÃO PRONTA. A PRIMEIRA vez que um deles aparece, em qualquer parte do texto "
+        "(inclusive título, gancho e fala), escreva-o já com a explicação, exatamente neste molde; depois pode usar só o "
+        "nome:\n" + "\n".join(linhas) + "\n"
+    )
+
+
 def instrucao_formato(formato: str, cfg: dict) -> str:
     f = cfg["formatos"]
     if formato == "artigo":
         lo, hi = f["artigo"]["palavras"]
-        return (f"FORMATO: artigo analítico para web ou newsletter, com título, corpo e conclusão. REGRA DURA: entre {lo + 30} e "
-                f"{hi - 100} palavras no total (menos de {lo} é rejeitado). A conclusão é um parágrafo novo, sem repetir o corpo.")
+        # Os modelos costumam escrever menos do que o pedido: mirar acima do mínimo é o que faz o texto passar dele.
+        return (f"FORMATO: artigo analítico para web ou newsletter, com título, corpo e conclusão. REGRA DURA: entre {lo + 150} e "
+                f"{hi - 250} palavras no total (menos de {lo} é rejeitado, e você tende a escrever menos do que mira: mire "
+                f"alto). ESTRUTURA: corpo de 4 a 5 parágrafos de 80 a 100 palavras, cada um com um fato, o contexto dele e o que "
+                "significa para quem lê; conclusão de uns 60 palavras em um parágrafo novo, sem repetir o corpo. Desenvolva com "
+                "contexto e consequências gerais, sem número ou dado novo e sem enrolação.")
     if formato == "carrossel":
         lo, hi = f["carrossel"]["slides"]
         c = f["carrossel"]["caracteres_por_slide"]
@@ -61,27 +98,27 @@ def instrucao_formato(formato: str, cfg: dict) -> str:
                 f"cada slide tem no máximo {c - 30} caracteres (conte; slide acima de {c} é rejeitado). Cada slide de corpo "
                 "traz uma ideia completa. Não cabe tudo: priorize os fatos mais importantes.")
     pmax, pps = f["video"]["duracao_maxima_s"], f["video"]["palavras_por_segundo"]
-    limite = int((pmax - 10) * pps)
-    minimo = int(limite * 0.8)
-    return (f"FORMATO: roteiro de vídeo curto de no máximo {pmax - 5} segundos, como um roteiro de produção. Cada cena tem: "
-            "inicio_s e fim_s (começa em 0, sem lacunas, a última termina em até "
-            f"{pmax - 5}); fala (a narração lida em voz alta); visual (a ação e as imagens: o que a pessoa faz e o que aparece, "
-            "em uma frase concreta, como \"mãos segurando uma nota de cem reais\"); texto_tela (a legenda grande que aparece "
-            "no vídeo: de 2 a 6 palavras, só texto, SEM emoji, a ideia central da cena). "
-            f"REGRA DURA: some todas as falas e escreva entre {minimo} e {limite} palavras. Abaixo de {minimo} o vídeo fica "
-            f"curto e deixa fatos de fora; acima de {limite} passa de {pmax} s e é rejeitado. Use o tempo todo: inicio_s e "
-            f"fim_s acompanham a fala, a {pps:g} palavras por segundo. "
+    minimo, limite = int((pmax - 12) * pps), int((pmax - 4) * pps)     # 120 a 140 palavras: de 48 a 56 s de fala
+    return (f"FORMATO: roteiro de vídeo curto, falado, que ocupa quase todo o tempo de {pmax} segundos. Cada cena tem: "
+            "fala (a narração lida em voz alta) e visual (a ação e as imagens: o que a pessoa faz e o que aparece, em uma "
+            "frase concreta, como \"mãos segurando uma nota de cem reais\"). Não escreva marcação de tempo: ela é calculada "
+            "a partir do tamanho de cada fala. "
+            f"REGRA DURA: some todas as falas e escreva entre {minimo} e {limite} palavras (de {int(minimo / pps)} a "
+            f"{int(limite / pps)} segundos de fala). Abaixo de {minimo} o vídeo fica curto e deixa fatos de fora; acima de "
+            f"{int(pmax * pps)} passa de {pmax} s e é rejeitado. Cada fala tem de 15 a 30 palavras: frases completas, com "
+            "contexto, e não só o dado solto. "
             "ESTRUTURA, de 5 a 7 cenas: (1) gancho que prende em poucos segundos; (2) o contexto, o que aconteceu; (3) uma cena "
-            "curta para CADA fato fornecido, com o número dito na fala exatamente como está nos fatos; (4) o que isso muda ou "
-            "significa para quem assiste, como consequência geral e sem número novo; (5) fechamento que resume a ideia, sem "
-            "pedir para comprar, vender ou aplicar nada. Número no texto_tela só se a fala da mesma cena o diz. "
+            "para CADA fato fornecido, com o número dito na fala exatamente como está nos fatos e uma frase sobre o que ele "
+            "quer dizer; (4) o que isso muda ou significa para quem assiste, como consequência geral e sem número novo; "
+            "(5) fechamento que resume a ideia, sem pedir para comprar, vender ou aplicar nada. "
             "Termo técnico que exige explicação é explicado na própria cena.")
 
 
-def sistema(nivel: str, formato: str, termos: list[Termo], cfg: dict) -> str:
+def sistema(nivel: str, formato: str, termos: list[Termo], cfg: dict, ancora: Ancora | None = None) -> str:
     return (
         "Você adapta documentos financeiros oficiais brasileiros, em português do Brasil, para um público e um formato.\n"
-        f"PÚBLICO: {PERFIL[nivel]}\n{regra_de_termos(nivel, termos)}\n{instrucao_formato(formato, cfg)}\n"
+        f"PÚBLICO: {PERFIL[nivel]}\n{regra_de_termos(nivel, termos)}\n{termos_do_documento(nivel, termos, ancora)}"
+        f"{instrucao_formato(formato, cfg)}\n"
         "REGRAS DE FIDELIDADE:\n"
         "- Use SOMENTE os fatos fornecidos. Todo número citado deve existir nos fatos, escrito igual (não calcule nem arredonde).\n"
         "- Cubra todos os fatos. Se dois forem parecidos, junte-os numa frase mantendo todos os números.\n"

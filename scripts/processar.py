@@ -36,7 +36,7 @@ def main():
     ap.add_argument("--niveis", nargs="+", choices=av.NIVEIS, default=list(av.NIVEIS))
     ap.add_argument("--formatos", nargs="+", choices=FORMATOS, default=list(FORMATOS))
     ap.add_argument("--prioritario", choices=av.NIVEIS)
-    ap.add_argument("--tentativas", type=int, default=3)
+    ap.add_argument("--tentativas", type=int, default=2)
     ap.add_argument("--concorrencia", type=int, default=3)
     ap.add_argument("--fatos", type=int, default=12)
     ap.add_argument("--forcar", action="store_true", help="ignora o cache e gera uma nova versao")
@@ -55,7 +55,8 @@ def main():
     print(f"Documento: {doc.proveniencia.url or doc.proveniencia.origem} ({len(doc.texto.split())} palavras)")
 
     extrator, juiz = clientes_groq()
-    cl = grafo.Clientes(extrator=extrator, gerador=ClienteGemini(), juiz=juiz)
+    gemini = ClienteGemini()
+    cl = grafo.Clientes(extrator=extrator, gerador=gemini, juiz=juiz, revisor=gemini)
     p = processar_com_banco(doc, cl, indice, Repositorio(), niveis=tuple(a.niveis), formatos=tuple(a.formatos),
                             nivel_prioritario=a.prioritario, max_tentativas=a.tentativas, concorrencia=a.concorrencia,
                             max_fatos=a.fatos, sessao=a.sessao, forcar=a.forcar)

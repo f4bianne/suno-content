@@ -66,8 +66,7 @@ def bom(nivel: str, formato: str) -> dict:
                 "conclusao": CONCLUSAO[nivel]}
     cenas, t = [], 0
     for i, f in enumerate(VIDEO[nivel][:3]):
-        cenas.append({"inicio_s": t, "fim_s": t + 15, "fala": f, "visual": "seta para cima sobre a taxa" if i == 0 else "gráfico",
-                      "texto_tela": "Juros em alta" if i == 0 else "O que muda"})
+        cenas.append({"fala": f, "visual": "seta para cima sobre a taxa" if i == 0 else "gráfico"})
         t += 15
     return {"cenas": cenas}
 

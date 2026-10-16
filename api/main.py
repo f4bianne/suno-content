@@ -41,7 +41,8 @@ PASTA_FRONT = RAIZ / "frontend" / "dist"   # gerada por `npm run build` em front
 def clientes_padrao() -> grafo.Clientes:
     """Extrator e juiz na Groq (gpt-oss-120b, ou outro modelo para o juiz via JUIZ_MODELO) e gerador no Gemini."""
     extrator, juiz = clientes_groq()
-    return grafo.Clientes(extrator=extrator, gerador=ClienteGemini(), juiz=juiz)
+    gemini = ClienteGemini()
+    return grafo.Clientes(extrator=extrator, gerador=gemini, juiz=juiz, revisor=gemini)
 
 
 class PedidoJob(BaseModel):
@@ -50,7 +51,7 @@ class PedidoJob(BaseModel):
     niveis: list[str] = list(av.NIVEIS)
     formatos: list[str] = list(FORMATOS)
     prioritario: str | None = None
-    tentativas: int = 3
+    tentativas: int = 2
     concorrencia: int = 2
     sessao: str | None = None
     forcar: bool = False          # ignora o cache e gera de novo

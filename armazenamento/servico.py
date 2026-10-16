@@ -14,7 +14,7 @@ from armazenamento.repositorio import Repositorio
 
 def processar_com_banco(documento: Documento, clientes: grafo.Clientes, indice: glossario.Indice, repo: Repositorio,
                         cfg: dict | None = None, niveis: tuple[str, ...] = av.NIVEIS, formatos: tuple[str, ...] = FORMATOS,
-                        nivel_prioritario: str | None = None, max_tentativas: int = 3, concorrencia: int = 3,
+                        nivel_prioritario: str | None = None, max_tentativas: int = 2, concorrencia: int = 3,
                         max_fatos: int = 12, sessao: str | None = None, forcar: bool = False,
                         observador: Callable[[dict], None] | None = None) -> grafo.Processamento:
     cfg = cfg or av.carregar_config()

@@ -25,6 +25,7 @@ class Clientes:
     extrator: Cliente
     gerador: Cliente
     juiz: Cliente
+    revisor: Cliente | None = None   # transforma as falhas em plano de reescrita; sem ele, a reescrita usa só o relatório
 
 
 class EstadoGrafo(TypedDict, total=False):
@@ -62,10 +63,11 @@ def ordenar(pedidos: list[tuple[str, str]], prioritario: str | None) -> list[tup
     return sorted(pedidos, key=lambda p: p[0] != prioritario)
 
 
-def construir_grafo(clientes: Clientes, indice: glossario.Indice, cfg: dict | None = None, max_tentativas: int = 3,
+def construir_grafo(clientes: Clientes, indice: glossario.Indice, cfg: dict | None = None, max_tentativas: int = 2,
                     max_fatos: int = 12, max_pedacos: int = 6, observador: Callable[[dict], None] | None = None):
     cfg = cfg or av.carregar_config()
-    ramo = construir_ramo(clientes.gerador, clientes.juiz, indice, cfg, max_tentativas, observador=observador)
+    ramo = construir_ramo(clientes.gerador, clientes.juiz, indice, cfg, max_tentativas, observador=observador,
+                          revisor=clientes.revisor)
 
     def avisar(evento: dict) -> None:
         if observador:
@@ -103,7 +105,7 @@ def construir_grafo(clientes: Clientes, indice: glossario.Indice, cfg: dict | No
 
 def processar(documento: Documento, clientes: Clientes, indice: glossario.Indice, cfg: dict | None = None,
               niveis: tuple[str, ...] = NIVEIS, formatos: tuple[str, ...] = FORMATOS, nivel_prioritario: str | None = None,
-              max_tentativas: int = 3, concorrencia: int = 3, ancora: Ancora | None = None,
+              max_tentativas: int = 2, concorrencia: int = 3, ancora: Ancora | None = None,
               observador: Callable[[dict], None] | None = None, **extracao) -> Processamento:
     grafo = construir_grafo(clientes, indice, cfg, max_tentativas, observador=observador, **extracao)
     pedidos = ordenar([(n, f) for n in niveis for f in formatos], nivel_prioritario)
