@@ -224,43 +224,6 @@ class Repositorio:
                               "segundos": round(e["segundos"], 1)})
             return saida
 
-    def relacionados(self, execucao_id: str, sessao: str | None = None, limite: int = 3) -> list[dict]:
-        """Outros documentos que falam das mesmas coisas, pelas entidades dos fatos extraidos (Jaccard).
-
-        Considera so o que a sessao pode ver, uma execucao (a mais recente) por documento, e ignora o proprio documento.
-        """
-        def entidades(ancora: dict) -> dict[str, str]:
-            return {e.strip().casefold(): e.strip() for f in ancora.get("fatos", []) for e in f.get("entidades", []) if e.strip()}
-
-        with self.engine.connect() as c:
-            alvo = c.execute(select(execucoes.c.documento_id, execucoes.c.ancora).where(execucoes.c.id == execucao_id)).first()
-            if alvo is None:
-                return []
-            minhas = entidades(alvo[1])
-            q = (select(execucoes.c.id, execucoes.c.documento_id, execucoes.c.criado_em, execucoes.c.ancora, documentos.c.origem)
-                 .join(documentos, documentos.c.id == execucoes.c.documento_id)
-                 .where(execucoes.c.documento_id != alvo[0])
-                 .where((documentos.c.escopo == "publico") | ((documentos.c.escopo == "sessao") & (documentos.c.sessao == (sessao or "_"))))
-                 .order_by(execucoes.c.criado_em.desc()))
-            outras = c.execute(q).mappings().all()
-            vistos: set[int] = set()
-            achados = []
-            for o in outras:
-                if o["documento_id"] in vistos:
-                    continue
-                vistos.add(o["documento_id"])
-                dela = entidades(o["ancora"])
-                comuns = sorted(minhas.keys() & dela.keys())
-                if not comuns:
-                    continue
-                uniao = len(minhas.keys() | dela.keys())
-                status = [s for (s,) in c.execute(select(ramos.c.status).where(ramos.c.execucao_id == o["id"]))]
-                achados.append({"id": o["id"], "origem": o["origem"], "criado_em": _utc(o["criado_em"]).isoformat(),
-                                "ramos": len(status), "aprovados": status.count("aprovado"),
-                                "entidades_comuns": [minhas[k] for k in comuns], "afinidade": round(len(comuns) / uniao, 3)})
-        achados.sort(key=lambda a: (-a["afinidade"], -len(a["entidades_comuns"])))
-        return achados[:limite]
-
     def pode_ver(self, execucao_id: str, sessao: str | None) -> bool:
         with self.engine.connect() as c:
             d = c.execute(select(documentos.c.escopo, documentos.c.sessao).join(

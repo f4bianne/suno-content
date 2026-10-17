@@ -3,6 +3,7 @@ import type { Config, Ramo, Tentativa } from "../tipos";
 import { checagens, nota, resumir, type Estado } from "../util/avaliacao";
 import { textoDe } from "../util/conteudo";
 import { diferenca, proporcaoAlterada } from "../util/diff";
+import { diagnosticos } from "../util/melhoria";
 
 const SIMBOLO: Record<Estado, string> = { ok: "✓", aviso: "!", falhou: "✕", nao_rodou: "–" };
 const ROTULO: Record<Estado, string> = { ok: "passou", aviso: "passou com ressalva", falhou: "não passou", nao_rodou: "não chegou a rodar" };
@@ -24,6 +25,38 @@ function manchete(ramo: Ramo, final: Tentativa, aprovadas: number, total: number
   return n ? `${linhaDaNota(n)} · passou em ${aprovadas} de ${total} conferências` : `Passou em ${aprovadas} de ${total} conferências`;
 }
 
+const MAX_PROBLEMAS = 5;
+
+/** Conteúdo bloqueado: cada problema da versão final, em linguagem simples, com o que mudar no texto. */
+function PorQue({ ramo, final }: { ramo: Ramo; final: Tentativa }) {
+  const [todos, setTodos] = useState(false);
+  const lista = diagnosticos(final, ramo.nivel);
+  if (lista.length === 0) return null;
+  const visiveis = todos ? lista : lista.slice(0, MAX_PROBLEMAS);
+  return (
+    <div className="por-que" role="region" aria-label="Por que não foi publicado">
+      <p className="titulo">Por que não foi publicado</p>
+      <p className="apoio">
+        {ramo.tentativas.length > 1 ? `Depois de ${ramo.tentativas.length} tentativas, ` : ""}a última versão ainda tinha {lista.length === 1 ? "este problema" : `estes ${lista.length} problemas`}
+        {lista.length > 1 ? ", do mais grave para o mais leve" : ""}:
+      </p>
+      <ol>
+        {visiveis.map((d, i) => (
+          <li key={i} className={d.tecnico ? "tecnico" : undefined}>
+            <span style={{ display: "block" }}>{d.problema}</span>
+            <span className="sugestao-melhoria"><strong>Como melhorar:</strong> {d.sugestao}</span>
+          </li>
+        ))}
+      </ol>
+      {lista.length > MAX_PROBLEMAS && (
+        <button type="button" className="botao-contorno" onClick={() => setTodos(!todos)}>
+          {todos ? "Mostrar só os principais" : `Ver mais ${lista.length - MAX_PROBLEMAS}`}
+        </button>
+      )}
+    </div>
+  );
+}
+
 interface Props { ramo: Ramo; config: Config | null }
 
 /** Responde, em linguagem simples, "esse conteúdo está bom?" e, se foi reescrito, "o que mudou?". */
@@ -40,6 +73,7 @@ export default function Avaliacao({ ramo, config }: Props) {
     <section className="cartao" aria-labelledby="t-aval">
       <h2 className="rotulo-secao" id="t-aval">Como foi avaliado</h2>
       <p className="manchete">{manchete(ramo, final, aprovadas, lista.length)}</p>
+      {ramo.status !== "aprovado" && <PorQue ramo={ramo} final={final} />}
       <ul className="checagens">
         {lista.map((c) => (
           <li key={c.id}>

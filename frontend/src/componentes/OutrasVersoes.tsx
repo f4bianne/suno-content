@@ -32,7 +32,7 @@ export default function OutrasVersoes({ atual, historico, nivel, formato, termos
   }, [escolhida]);
 
   if (outras.length === 0) {
-    return <p className="apoio">Este documento foi gerado uma vez só. Para ter uma segunda versão e comparar, gere de novo marcando "Gerar uma nova versão" nas opções.</p>;
+    return <p className="apoio">Este documento foi gerado uma vez só. Para ter uma segunda versão e comparar, gere de novo.</p>;
   }
 
   const minha = atual.ramos.find((r) => r.nivel === nivel && r.formato === formato);

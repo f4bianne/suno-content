@@ -58,9 +58,6 @@ export interface Config {
   niveis: Nivel[]; formatos: Formato[];
   limiares: Record<Nivel, { flesch: [number, number]; flesch_video?: [number, number]; flesch_carrossel?: [number, number]; cobertura_minima: number }>;
 }
-export interface Relacionado {
-  id: string; origem: string; criado_em: string; ramos: number; aprovados: number; entidades_comuns: string[]; afinidade: number;
-}
 export interface TermoGlossario { termo: string; nivel: number; formas: string[]; explicacao: string; ambiguo: boolean }
 
 /** Estado de um dos 9 conteúdos enquanto o servidor trabalha. */

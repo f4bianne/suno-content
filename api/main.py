@@ -218,13 +218,6 @@ def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
             raise HTTPException(404, "execução não encontrada")
         return json.loads(proc.model_dump_json())
 
-    @app.get("/api/execucoes/{execucao_id}/relacionados")
-    def ver_relacionados(execucao_id: str, sessao: str | None = None):
-        """Outros documentos com as mesmas entidades (por exemplo, quem também fala de Selic e IPCA)."""
-        if not repo.pode_ver(execucao_id, sessao):
-            raise HTTPException(404, "execução não encontrada")
-        return repo.relacionados(execucao_id, sessao)
-
     @app.get("/api/config")
     def configuracao():
         c = cfg or av.carregar_config()

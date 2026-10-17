@@ -1,4 +1,4 @@
-import type { Config, Formato, Job, Nivel, Processamento, Relacionado, ResumoExecucao, TermoGlossario } from "./tipos";
+import type { Config, Formato, Job, Nivel, Processamento, ResumoExecucao, TermoGlossario } from "./tipos";
 
 async function json<T>(r: Response): Promise<T> {
   if (!r.ok) {
@@ -52,6 +52,5 @@ export const verJob = async (id: string) => json<Job>(await fetch(`/api/jobs/${i
 export const cancelarJob = async (id: string) => json<{ id: string; status: string }>(await fetch(`/api/jobs/${id}/cancelar`, { method: "POST" }));
 export const listarExecucoes = async () => json<ResumoExecucao[]>(await fetch(`/api/execucoes${consultaSessao()}`));
 export const verExecucao = async (id: string) => json<Processamento>(await fetch(`/api/execucoes/${id}${consultaSessao()}`));
-export const verRelacionados = async (id: string) => json<Relacionado[]>(await fetch(`/api/execucoes/${id}/relacionados${consultaSessao()}`));
 export const verConfig = async () => json<Config>(await fetch("/api/config"));
 export const verGlossario = async () => json<TermoGlossario[]>(await fetch("/api/glossario"));

@@ -5,7 +5,6 @@ import { config, glossario, resultado } from "../fixtures";
 import type { Processamento, ResumoExecucao } from "../tipos";
 import ExportarDesign from "./ExportarDesign";
 import OutrasVersoes from "./OutrasVersoes";
-import VejaTambem from "./VejaTambem";
 
 beforeEach(() => { window.scrollTo = vi.fn(); });
 afterEach(() => { cleanup(); vi.restoreAllMocks(); vi.unstubAllGlobals(); vi.useRealTimers(); });
@@ -121,37 +120,6 @@ describe("OutrasVersoes", () => {
   });
 });
 
-describe("VejaTambem", () => {
-  const rel = { id: "r1", origem: "Ata do Copom nº 280", criado_em: "2026-09-01T10:00:00Z", ramos: 9, aprovados: 9, entidades_comuns: ["Selic", "IPCA"], afinidade: 0.5 };
-
-  it("lista os documentos com as mesmas entidades e abre o escolhido", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => json([rel])));
-    const onAbrir = vi.fn();
-    render(<VejaTambem execucaoId="abc123" onAbrir={onAbrir} />);
-    expect(screen.getByText(/Procurando/)).toBeTruthy();
-    fireEvent.click(await screen.findByText("Ata do Copom nº 280"));
-    expect(onAbrir).toHaveBeenCalledWith("r1");
-    expect(screen.getByText(/Também fala de Selic, IPCA/)).toBeTruthy();
-  });
-
-  it("sem relacionados, ou se a busca falhar, explica sem quebrar a tela", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => json([])));
-    const { unmount } = render(<VejaTambem execucaoId="abc123" onAbrir={vi.fn()} />);
-    expect(await screen.findByText(/Nenhum outro documento/)).toBeTruthy();
-    unmount();
-    vi.stubGlobal("fetch", vi.fn(async () => json({ detail: "erro" }, 500)));
-    render(<VejaTambem execucaoId="abc123" onAbrir={vi.fn()} />);
-    expect(await screen.findByText(/Nenhum outro documento/)).toBeTruthy();
-  });
-
-  it("sem identificador de execução, nem consulta o servidor", () => {
-    const f = vi.fn(); vi.stubGlobal("fetch", f);
-    render(<VejaTambem execucaoId={null} onAbrir={vi.fn()} />);
-    expect(screen.getByText(/Nenhum outro documento/)).toBeTruthy();
-    expect(f).not.toHaveBeenCalled();
-  });
-});
-
 describe("Entrada: escolher o que gerar", () => {
   it("envia só os níveis e formatos marcados e bloqueia quando nada está marcado", async () => {
     const { default: Entrada } = await import("./Entrada");
@@ -163,7 +131,6 @@ describe("Entrada: escolher o que gerar", () => {
     fireEvent.click(niveis.getByLabelText("Intermediário"));
     fireEvent.click(niveis.getByLabelText("Avançado"));
     fireEvent.click(formatos.getByLabelText("Vídeo curto"));
-    expect(screen.getByText(/2 conteúdos/)).toBeTruthy();
     fireEvent.submit(botao("Gerar conteúdos").closest("form")!);
     expect(onGerar).toHaveBeenCalledWith({ tipo: "termo", valor: "Copom" },
       { niveis: ["iniciante"], formatos: ["artigo", "carrossel"], prioritario: null, tentativas: 2, forcar: false });
@@ -213,5 +180,22 @@ describe("Avaliacao: definição acrescentada pelo sistema", () => {
     const ramo = { ...base, tentativas: base.tentativas.map((t, i) => i === 0 ? { ...t, metricas: { ...t.metricas, explicacoes_inseridas: ["Selic", "CDB"] } } : t) };
     render(<Avaliacao ramo={ramo} config={config} />);
     expect(screen.getByText("O sistema acrescentou a definição do glossário em: Selic, CDB.")).toBeTruthy();
+  });
+});
+
+describe("Avaliacao: conteúdo bloqueado", () => {
+  it("explica por que não foi publicado e sugere o que mudar", async () => {
+    const { default: Avaliacao } = await import("./Avaliacao");
+    render(<Avaliacao ramo={ramoDe("iniciante", "video")} config={config} />);
+    const quadro = within(screen.getByRole("region", { name: "Por que não foi publicado" }));
+    expect(quadro.getByText(/Depois de 2 tentativas/)).toBeTruthy();
+    expect(quadro.getByText("O vídeo passa do tempo: cerca de 80 s de fala, e o máximo é 60 s.")).toBeTruthy();
+    expect(quadro.getByText("Como melhorar:")).toBeTruthy();
+  });
+
+  it("conteúdo aprovado não mostra o quadro", async () => {
+    const { default: Avaliacao } = await import("./Avaliacao");
+    render(<Avaliacao ramo={ramoDe("iniciante", "artigo")} config={config} />);
+    expect(screen.queryByRole("region", { name: "Por que não foi publicado" })).toBeNull();
   });
 });

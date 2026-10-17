@@ -43,7 +43,7 @@ O sistema é organizado em cinco camadas:
 2. **Ingestão:** transforma qualquer entrada num documento normalizado com proveniência e decide se é preciso gerar ou se já existe resultado.
 3. **Grafo:** extrai, gera, avalia e corrige.
 4. **Versões:** guarda todas as gerações, sem substituição.
-5. **Interface:** expõe o grafo e as versões; a sessão do visitante (nível inferido e recomendações) vive só aqui.
+5. **Interface:** expõe o grafo e as versões; a sessão do visitante (nível escolhido) vive só aqui.
 
 ### 2.2 Camada de ingestão
 
@@ -131,7 +131,6 @@ flowchart TD
 ### 2.7 Personalização (só na sessão)
 
 - Nível inferido por comportamento (cliques em termos, troca de nível).
-- Recomendações baseadas nas entidades extraídas e em pesquisas em alta, agregadas e anônimas.
 - Acesso ao perfil concentrado num único ponto do código, para facilitar persistência futura.
 
 ### 2.8 Conformidade
@@ -158,7 +157,7 @@ flowchart LR
 
     subgraph FRONT["Frontend · React + Vite + TypeScript"]
         UI["Interface<br/>matriz 3x3, leitor, histórico"]
-        SES["Sessão do visitante<br/>nível inferido, recomendações"]
+        SES["Sessão do visitante<br/>nível escolhido"]
         PRE["Pré-visualização<br/>template HTML"]
     end
 
@@ -344,7 +343,6 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 ### Experiência do leitor
 
 - **Personalização por comportamento, sem login.** O nível é inferido na sessão, sem guardar nada que identifique a pessoa.
-- **Recomendações sem dados pessoais.** Combinam as entidades extraídas com pesquisas em alta, agregadas e anônimas.
 - **Termos destacados e explicados no nível certo.** O glossário serve ao avaliador e ao leitor ao mesmo tempo.
 
 ### Produção de conteúdo
@@ -405,7 +403,7 @@ O que este projeto entrega além do que o case pede, e por que cada ponto import
 - [x] 31. Exportações para o Figma e prompt (SVG que o Figma importa, sem integração direta; prompt para IA de imagem com aviso)
 - [ ] 32. Inferência de nível na sessão (removido da interface: o leitor escolhe o nível)
 - [ ] 33. Personas simuladas para a demo (removido da interface: confuso e desnecessário)
-- [x] 34. Recomendações por entidades e pesquisas em alta (só por entidades; sem fonte de pesquisas em alta)
+- [ ] 34. Recomendações por entidades e pesquisas em alta (removido: com poucos documentos, quase nunca havia relacionado)
 - [x] 35. Comparação visual entre versões
 
 ### Fase 9: Entrega

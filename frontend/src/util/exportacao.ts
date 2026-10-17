@@ -1,5 +1,6 @@
 import type { Processamento, Ramo } from "../tipos";
 import { ROTULO_FORMATO, ROTULO_NIVEL } from "../tipos";
+import { MARCA_CLARA, MARCA_ESCURA, MARCA_PROPORCAO } from "./marca";
 
 const TAMANHO = 1080;      // slide quadrado, o formato padrão de carrossel
 const ESPACO = 80;         // entre slides na folha
@@ -24,6 +25,15 @@ export function quebrarLinhas(texto: string, max: number): string[] {
 
 type Papel = "gancho" | "corpo" | "conclusao";
 
+const LOGO_ALTURA = 40;
+
+/** A logo oficial embutida (data URI), para o arquivo abrir sozinho e no Figma. `href` e `xlink:href` cobrem SVG 1 e 2. */
+function logo(escuro: boolean): string {
+  const src = escuro ? MARCA_ESCURA : MARCA_CLARA;
+  const largura = Math.round(LOGO_ALTURA * MARCA_PROPORCAO);
+  return `<image xmlns:xlink="http://www.w3.org/1999/xlink" x="96" y="${104 - LOGO_ALTURA + 8}" width="${largura}" height="${LOGO_ALTURA}" href="${src}" xlink:href="${src}"><title>Suno</title></image>`;
+}
+
 /** Um slide em SVG, com a identidade da Suno: gancho em carvão, corpo em branco, vermelho só no detalhe. */
 export function slideSvg(texto: string, indice: number, total: number, deslocamentoX = 0): string {
   const papel: Papel = indice === 0 ? "gancho" : indice === total - 1 ? "conclusao" : "corpo";
@@ -36,7 +46,7 @@ export function slideSvg(texto: string, indice: number, total: number, deslocame
   const rotulo = papel === "gancho" ? "GANCHO" : papel === "conclusao" ? "CONCLUSÃO" : `${indice + 1} DE ${total}`;
   return `<g id="slide-${indice + 1}-${papel}" transform="translate(${deslocamentoX},0)">
   <rect width="${TAMANHO}" height="${TAMANHO}" fill="${fundo}"/>
-  <text x="96" y="104" font-family="Arial, Helvetica, sans-serif" font-size="30" fill="${VERMELHO}" font-weight="700">(<tspan fill="${apoio}" letter-spacing="9" font-weight="400"> SUNO </tspan>)</text>
+  ${logo(escuro)}
   <text x="${TAMANHO - 96}" y="104" text-anchor="end" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="700" letter-spacing="3" fill="${apoio}">${String(indice + 1).padStart(2, "0")} / ${String(total).padStart(2, "0")}</text>
   <rect x="96" y="136" width="${TAMANHO - 192}" height="2" fill="${escuro ? "#3A3A3A" : "#D9D9D9"}"/>
   <text font-family="Arial, Helvetica, sans-serif" font-size="${tamanho}" font-weight="${papel === "corpo" ? 400 : 700}" fill="${tinta}">${tspans}</text>

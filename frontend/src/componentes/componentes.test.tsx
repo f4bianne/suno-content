@@ -186,14 +186,15 @@ describe("Entrada e histórico", () => {
     expect(gerar.disabled).toBe(true);
     fireEvent.change(screen.getByLabelText(/Assunto/), { target: { value: "Copom" } });
     expect(gerar.disabled).toBe(false);
-    fireEvent.change(screen.getByLabelText(/Gerar primeiro o nível/), { target: { value: "avancado" } });
     fireEvent.submit(gerar.closest("form")!);
     expect(onGerar).toHaveBeenCalledWith({ tipo: "termo", valor: "Copom" },
-      { niveis: ["iniciante", "intermediario", "avancado"], formatos: ["artigo", "carrossel", "video"], prioritario: "avancado", tentativas: 2, forcar: false });
+      { niveis: ["iniciante", "intermediario", "avancado"], formatos: ["artigo", "carrossel", "video"], prioritario: null, tentativas: 2, forcar: false });
+    expect(screen.queryByText("Opções")).toBeNull();
   });
 
   it("as sugestões preenchem o campo e as três abas existem", () => {
     render(<Entrada ocupado={false} erro={null} onGerar={vi.fn()} />);
+    expect(screen.getByText("Sugestões:")).toBeTruthy();
     fireEvent.click(botao("Inflação"));
     expect((screen.getByLabelText(/Assunto/) as HTMLInputElement).value).toBe("Inflação");
     expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["Um assunto", "Um link", "Um PDF"]);
@@ -231,22 +232,36 @@ describe("Entrada e histórico", () => {
       { id: "b2", documento: "d2", origem: "meu.pdf", url: null, tipo: "pdf", escopo: "sessao", criado_em: "2026-10-11T17:00:00Z", ramos: 9, aprovados: 3 },
     ]} />);
     expect(screen.getByText("7 de 9 aprovados")).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: /PDFs/ }));
     expect(screen.getByText(/só você vê/)).toBeTruthy();
     fireEvent.click(screen.getByText("meu.pdf"));
     expect(onAbrir).toHaveBeenCalledWith("b2");
   });
 
-  it("histórico separa por tipo e mostra o termo, o link e o nome do PDF", () => {
+  it("histórico separa por tipo em abas e mostra o termo, o link e o nome do PDF", () => {
     render(<Historico onAbrir={vi.fn()} itens={[
       { id: "a", documento: "d1", origem: "taxa selic", documento_nome: "Ata da 281ª reunião do Copom (16/09/2026)", url: null, tipo: "termo", escopo: "publico", criado_em: "2026-10-11T16:29:00Z", ramos: 9, aprovados: 5 },
       { id: "b", documento: "d2", origem: "https://www.bcb.gov.br/ata.pdf", url: null, tipo: "link", escopo: "publico", criado_em: "2026-10-11T16:30:00Z", ramos: 9, aprovados: 6 },
       { id: "c", documento: "d3", origem: "ata_copom.pdf", url: null, tipo: "pdf", escopo: "sessao", criado_em: "2026-10-11T16:31:00Z", ramos: 9, aprovados: 4 },
     ]} />);
-    const grupo = (t: string) => screen.getByRole("heading", { name: t }).parentElement!;
-    expect(within(grupo("Termos pesquisados")).getByText("taxa selic")).toBeTruthy();
-    expect(within(grupo("Termos pesquisados")).getByText(/Ata da 281ª reunião do Copom/)).toBeTruthy();
-    expect(within(grupo("Links")).getByText("https://www.bcb.gov.br/ata.pdf")).toBeTruthy();
-    expect(within(grupo("PDFs enviados")).getByText("ata_copom.pdf")).toBeTruthy();
+    const painel = () => screen.getByRole("tabpanel");
+    expect(screen.getByRole("tab", { name: "Termos (1)" }).getAttribute("aria-selected")).toBe("true");
+    expect(within(painel()).getByText("taxa selic")).toBeTruthy();
+    expect(within(painel()).getByText(/Ata da 281ª reunião do Copom/)).toBeTruthy();
+    expect(within(painel()).queryByText("ata_copom.pdf")).toBeNull();
+    fireEvent.click(screen.getByRole("tab", { name: "Links (1)" }));
+    expect(within(painel()).getByText("https://www.bcb.gov.br/ata.pdf")).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "PDFs (1)" }));
+    expect(within(painel()).getByText("ata_copom.pdf")).toBeTruthy();
+  });
+
+  it("histórico abre na primeira aba com conteúdo e explica a aba vazia", () => {
+    render(<Historico onAbrir={vi.fn()} itens={[
+      { id: "c", documento: "d3", origem: "ata_copom.pdf", url: null, tipo: "pdf", escopo: "sessao", criado_em: "2026-10-11T16:31:00Z", ramos: 9, aprovados: 4 },
+    ]} />);
+    expect(within(screen.getByRole("tabpanel")).getByText("ata_copom.pdf")).toBeTruthy();
+    fireEvent.click(screen.getByRole("tab", { name: "Links (0)" }));
+    expect(screen.getByText("Nenhum link gerado ainda.")).toBeTruthy();
   });
 
   it("histórico vazio explica o que acontece", () => {
@@ -283,13 +298,13 @@ const historicoApi = [{ id: "abc123", documento: "0203078de324aaaa", origem: "At
 
 describe("App", () => {
   it("abre uma execução do histórico e volta ao início", async () => {
-    servidor({ "/api/config": config, "/api/glossario": glossario, "/api/execucoes/abc123/relacionados": [], "/api/execucoes/abc123": resultado, "/api/execucoes": historicoApi });
+    servidor({ "/api/config": config, "/api/glossario": glossario, "/api/execucoes/abc123": resultado, "/api/execucoes": historicoApi });
     render(<App />);
     fireEvent.click(await screen.findByText("Ata do Copom nº 281"));
     expect(await screen.findByText("Iniciante · Artigo")).toBeTruthy();
     expect(screen.getByText("8 de 9")).toBeTruthy();
     fireEvent.click(botao("Novo documento"));
-    expect(await screen.findByText(/Transforme um documento financeiro/)).toBeTruthy();
+    expect(await screen.findByText(/Um documento oficial, três leitores/)).toBeTruthy();
   });
 
   it("gera um documento: acompanha o andamento e mostra o resultado", async () => {
@@ -351,7 +366,7 @@ describe("App", () => {
     await waitFor(() => expect(FalsoEventSource.ultimo?.url).toBe("/api/jobs/job9/eventos"));
     act(() => { FalsoEventSource.ultimo!.emitir({ tipo: "erro", mensagem: "x" }); });
     expect((await screen.findByRole("alert")).textContent).toContain("Não há fonte oficial");
-    expect(screen.getByText(/Transforme um documento financeiro/)).toBeTruthy();
+    expect(screen.getByText(/Um documento oficial, três leitores/)).toBeTruthy();
   });
 
   it("recusa do servidor na criação do job vira mensagem na tela", async () => {

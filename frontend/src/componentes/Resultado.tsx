@@ -10,12 +10,12 @@ import Mapa from "./Mapa";
 
 interface Props {
   resultado: Processamento; config: Config | null; glossario: TermoGlossario[]; onNovo: () => void;
-  historico?: ResumoExecucao[]; onAbrir?: (id: string) => void;
+  historico?: ResumoExecucao[];
 }
 
 const selo = (r: Ramo | undefined) => (r ? (r.status === "aprovado" ? "ok" : "ruim") : "");
 
-export default function Resultado({ resultado, config, glossario, onNovo, historico = [], onAbrir = () => undefined }: Props) {
+export default function Resultado({ resultado, config, glossario, onNovo, historico = [] }: Props) {
   const primeiro = resultado.ramos[0];
   const [nivel, setNivel] = useState<Nivel>(primeiro?.nivel ?? "iniciante");
   const [formato, setFormato] = useState<Formato>(primeiro?.formato ?? "artigo");
@@ -125,7 +125,7 @@ export default function Resultado({ resultado, config, glossario, onNovo, histor
         <summary>Fatos e fonte do documento</summary>
         <div><Fatos resultado={resultado} /></div>
       </details>
-      <Extras resultado={resultado} config={config} historico={historico} termos={termos} nivel={nivel} formato={formato} onAbrir={onAbrir} />
+      <Extras resultado={resultado} config={config} historico={historico} termos={termos} nivel={nivel} formato={formato} />
     </>
   );
 }
@@ -133,9 +133,9 @@ export default function Resultado({ resultado, config, glossario, onNovo, histor
 function Legenda() {
   return (
     <div className="legenda-termos legenda">
+      <span style={{ flexBasis: "100%" }}>Passe o mouse sobre o termo para ver o que significa:</span>
       <span><mark className="termo n2" style={{ color: "inherit" }}>termo de mercado</mark> conhecido por quem investe</span>
       <span><mark className="termo n3" style={{ color: "inherit" }}>jargão institucional</mark> de especialistas</span>
-      <span>Passe o mouse sobre o termo para ver o que significa. Se clicar, o sistema aprende o que você já conhece.</span>
     </div>
   );
 }

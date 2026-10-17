@@ -187,19 +187,6 @@ def test_sem_interface_compilada_a_raiz_nao_existe(tmp_path):
     assert TestClient(app).get("/").status_code == 404
 
 
-
-def test_endpoint_de_relacionados_respeita_a_privacidade(cliente):
-    j = esperar(cliente, cliente.post("/api/jobs", json={"tipo": "termo", "valor": "Copom"}).json()["id"])
-    exec_id = j["resultado"]["execucao_id"]
-    assert cliente.get(f"/api/execucoes/{exec_id}/relacionados").json() == []        # só há um documento
-    assert cliente.get("/api/execucoes/nada/relacionados").status_code == 404
-    r = cliente.post("/api/jobs/pdf?nome=privado.pdf", content=b"%PDF-1.4 fake").json()
-    privado = esperar(cliente, r["id"])["resultado"]["execucao_id"]
-    assert cliente.get(f"/api/execucoes/{privado}/relacionados").status_code == 404   # sem a sessão, nem existe
-    com_sessao = cliente.get(f"/api/execucoes/{privado}/relacionados?sessao={r['sessao']}").json()
-    assert [x["id"] for x in com_sessao] == [exec_id]                                    # mesmo texto => mesmas entidades
-
-
 def test_cancelar_interrompe_o_job_e_nao_guarda_nada():
     import threading
 

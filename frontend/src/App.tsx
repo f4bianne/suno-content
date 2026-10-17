@@ -118,7 +118,7 @@ export default function App() {
         {tela === "gerando" && <Andamento eventos={eventos} ao_vivo={celulasDosEventos(eventos)} total={total} pedidos={pedidos} onCancelar={cancelar} />}
         {tela === "resultado" && resultado && (
           <Resultado key={resultado.execucao_id ?? resultado.documento_chave} resultado={resultado} config={config} glossario={glossario}
-            onNovo={voltarAoInicio} historico={historico} onAbrir={abrir} />
+            onNovo={voltarAoInicio} historico={historico} />
         )}
       </main>
     </>

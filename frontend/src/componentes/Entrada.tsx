@@ -2,7 +2,10 @@ import { useState } from "react";
 import type { Opcoes } from "../api";
 import { FORMATOS, NIVEIS, ROTULO_FORMATO, ROTULO_NIVEL, type Formato, type Nivel } from "../tipos";
 
-const SUGESTOES = ["Copom", "Inflação", "Estabilidade financeira", "Fundos de investimento"];
+// Cada sugestão é uma chave de dados/ingestao.yaml: sempre acha um documento oficial.
+const SUGESTOES = ["Copom", "Selic", "Juros", "Inflação", "IPCA", "Câmbio", "Crédito", "Inadimplência",
+  "Estabilidade financeira", "Fundos de investimento", "FII", "Política monetária", "Expectativas de inflação", "Taxa de juros",
+  "Sistema financeiro", "Fiagro"];
 type Modo = "termo" | "link" | "pdf";
 export type Pedido = { tipo: "termo" | "link"; valor: string } | { tipo: "pdf"; arquivo: File };
 
@@ -13,9 +16,6 @@ export default function Entrada({ ocupado, erro, aviso, onGerar }: Props) {
   const [termo, setTermo] = useState("");
   const [link, setLink] = useState("");
   const [arquivo, setArquivo] = useState<File | null>(null);
-  const [prioritario, setPrioritario] = useState<Nivel | "">("");
-  const [tentativas, setTentativas] = useState(2);
-  const [forcar, setForcar] = useState(false);
   const [niveis, setNiveis] = useState<Nivel[]>([...NIVEIS]);
   const [formatos, setFormatos] = useState<Formato[]>([...FORMATOS]);
 
@@ -27,7 +27,7 @@ export default function Entrada({ ocupado, erro, aviso, onGerar }: Props) {
 
   function enviar(e: React.FormEvent) {
     e.preventDefault();
-    const o: Opcoes = { niveis, formatos, prioritario: prioritario && niveis.includes(prioritario) ? prioritario : null, tentativas, forcar };
+    const o: Opcoes = { niveis, formatos, prioritario: null, tentativas: 2, forcar: false };
     if (modo === "pdf" && arquivo) onGerar({ tipo: "pdf", arquivo }, o);
     else if (modo === "link") onGerar({ tipo: "link", valor: link.trim() }, o);
     else if (modo === "termo") onGerar({ tipo: "termo", valor: termo.trim() }, o);
@@ -35,10 +35,7 @@ export default function Entrada({ ocupado, erro, aviso, onGerar }: Props) {
 
   return (
     <form className="cartao" onSubmit={enviar}>
-      <h1 className="grande">Transforme um documento financeiro em conteúdo para o seu público</h1>
-      <p className="apoio" style={{ marginTop: 12 }}>
-        Escolha o documento. O sistema escreve 3 níveis (iniciante, intermediário e avançado) em 3 formatos e confere cada um.
-      </p>
+      <h1 className="grande">Um documento oficial, três leitores, nove conteúdos.</h1>
 
       <div className="abas" role="tablist" aria-label="Como informar o documento">
         {([["termo", "Um assunto"], ["link", "Um link"], ["pdf", "Um PDF"]] as [Modo, string][]).map(([id, nome]) => (
@@ -50,7 +47,8 @@ export default function Entrada({ ocupado, erro, aviso, onGerar }: Props) {
         <div className="campo">
           <label htmlFor="termo">Assunto: buscamos o documento oficial mais recente</label>
           <input id="termo" type="text" value={termo} onChange={(e) => setTermo(e.target.value)} placeholder="Ex.: Copom" autoComplete="off" />
-          <div className="sugestoes">
+          <div className="sugestoes" role="group" aria-label="Sugestões de assunto">
+            <span className="legenda">Sugestões:</span>
             {SUGESTOES.map((s) => <button key={s} type="button" className="sugestao" onClick={() => setTermo(s)}>{s}</button>)}
           </div>
         </div>
@@ -70,8 +68,8 @@ export default function Entrada({ ocupado, erro, aviso, onGerar }: Props) {
 
       <fieldset className="escolha">
         <legend className="rotulo-secao">O que gerar</legend>
-        <div className="escolha-linha">
-          <span className="legenda">Níveis</span>
+        {/* Uma barra para os níveis e outra para os formatos, lado a lado; os nomes ficam só no aria-label. */}
+        <div className="escolha-barras">
           <div className="seletor" role="group" aria-label="Níveis">
             {NIVEIS.map((n) => (
               <label key={n} className="opcao">
@@ -80,9 +78,6 @@ export default function Entrada({ ocupado, erro, aviso, onGerar }: Props) {
               </label>
             ))}
           </div>
-        </div>
-        <div className="escolha-linha">
-          <span className="legenda">Formatos</span>
           <div className="seletor" role="group" aria-label="Formatos">
             {FORMATOS.map((f) => (
               <label key={f} className="opcao">
@@ -92,34 +87,8 @@ export default function Entrada({ ocupado, erro, aviso, onGerar }: Props) {
             ))}
           </div>
         </div>
-        <p className={escolha ? "legenda" : "legenda erro"}>
-          {escolha ? `${niveis.length * formatos.length} ${niveis.length * formatos.length === 1 ? "conteúdo" : "conteúdos"}. Menos conteúdos, geração mais rápida.`
-            : "Marque pelo menos um nível e um formato."}
-        </p>
+        {!escolha && <p className="legenda erro">Marque pelo menos um nível e um formato.</p>}
       </fieldset>
-
-      <details className="opcoes">
-        <summary>Opções</summary>
-        <div className="opcoes-corpo">
-          <div className="campo">
-            <label htmlFor="prio">Gerar primeiro o nível</label>
-            <select id="prio" value={prioritario} onChange={(e) => setPrioritario(e.target.value as Nivel | "")}>
-              <option value="">Nenhum</option>
-              {NIVEIS.filter((n) => niveis.includes(n)).map((n) => <option key={n} value={n}>{ROTULO_NIVEL[n]}</option>)}
-            </select>
-          </div>
-          <div className="campo">
-            <label htmlFor="tent">Tentativas por conteúdo</label>
-            <select id="tent" value={tentativas} onChange={(e) => setTentativas(Number(e.target.value))}>
-              {[1, 2].map((n) => <option key={n} value={n}>{n}</option>)}
-            </select>
-          </div>
-          <label className="interruptor" style={{ gridColumn: "1 / -1" }}>
-            <input type="checkbox" checked={forcar} onChange={(e) => setForcar(e.target.checked)} />
-            Gerar uma nova versão, mesmo que já exista uma igual guardada
-          </label>
-        </div>
-      </details>
 
       <div className="acoes">
         <button className="botao" disabled={!pronto || ocupado}>{ocupado ? "Gerando…" : "Gerar conteúdos"}</button>
