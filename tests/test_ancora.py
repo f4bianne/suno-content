@@ -60,7 +60,17 @@ def test_fato_com_numero_nao_exige_a_entidade():
     assert cobertura(texto, ancora()).presentes == ["f2"]
 
 
-def test_fato_sem_numero_exige_as_entidades():
+def test_fato_sem_numero_com_as_entidades_conta_e_sem_elas_vai_para_o_juiz():
     a = Ancora(fatos=[Fato(id="x", texto="Fato", entidades=["Copom", "Selic"])])
-    assert cobertura("O Copom decidiu.", a).ausentes == ["x"]
     assert cobertura("O Copom manteve a Selic.", a).presentes == ["x"]
+    c = cobertura("O Copom decidiu.", a)          # pode ter sido dito com outras palavras ("países ricos")
+    assert c.indeterminados == ["x"] and c.ausentes == []
+
+
+def test_fato_com_varios_numeros_conta_com_a_maioria_quando_configurado():
+    a = Ancora(fatos=[Fato(id="f", texto="IPCA livres 5,2, 4,1 e 3,2", numeros=["5,2", "4,1", "3,2"])])
+    texto = "A projeção é de 5,2% e depois 4,1%."
+    assert cobertura(texto, a).ausentes == ["f"]                 # padrão: todos os números
+    assert cobertura(texto, a, 0.5).presentes == ["f"]
+    assert cobertura("Só 5,2%.", a, 0.5).ausentes == ["f"]       # 1 de 3 não é a maioria
+    assert cobertura("Nada.", a, 0.0).ausentes == ["f"]          # pelo menos um número sempre

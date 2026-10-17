@@ -44,6 +44,8 @@ class Processamento(BaseModel):
     documento_chave: str
     origem: str
     url: str | None
+    tipo: str | None = None                 # termo, link ou pdf
+    documento_nome: str | None = None       # no termo: o documento achado, já que a origem é o que foi pesquisado
     ancora: Ancora
     fatos_descartados: list[tuple[str, str]]
     ramos: list[ResultadoRamo]
@@ -116,5 +118,6 @@ def processar(documento: Documento, clientes: Clientes, indice: glossario.Indice
     ordem = {p: i for i, p in enumerate(pedidos)}
     ramos = sorted(final["resultados"], key=lambda r: ordem[(r.nivel, r.formato)])
     p = documento.proveniencia
-    return Processamento(documento_chave=documento.chave, origem=p.origem, url=p.url, ancora=final["ancora"],
+    return Processamento(documento_chave=documento.chave, origem=p.origem, url=p.url, tipo=p.tipo,
+                         documento_nome=p.documento, ancora=final["ancora"],
                          fatos_descartados=final.get("descartados", []), ramos=ramos)

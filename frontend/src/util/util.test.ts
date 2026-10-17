@@ -48,6 +48,24 @@ describe("avaliacao", () => {
     expect(c.find((x) => x.id === "juiz")!.estado).toBe("nao_rodou");
   });
 
+  it("num texto aprovado pela nota, a falha leve vira ressalva e a duracao conta como formato", () => {
+    const n = { total: 0.9, limiar: 0.85, por_metrica: {}, bloqueios: [], abaixo_do_piso: [], juiz: "avaliou" as const, aprovado: true };
+    const t = tentativa(["[glossario] termo X sem explicacao."], { aprovado: true, veredito, metricas: { flesch: 70, cobertura: 0.9, nota: n } });
+    const c = checagens(t, { nivel: "iniciante", formato: "artigo" }, config);
+    expect(c.find((x) => x.id === "termos")!.estado).toBe("aviso");
+    expect(c.find((x) => x.id === "juiz")!.estado).toBe("ok");
+    const video = checagens(tentativa(["[duracao] roteiro marca 70s (máximo 60s)"]), { nivel: "iniciante", formato: "video" }, config);
+    expect(video.find((x) => x.id === "formato")!.estado).toBe("falhou");
+  });
+
+  it("juiz nao chamado porque a nota das regras ficou abaixo do minimo", () => {
+    const n = { total: 0.7, limiar: 0.85, por_metrica: {}, bloqueios: [], abaixo_do_piso: [], juiz: "nao_chamado" as const, aprovado: false };
+    const c = checagens(tentativa(["[formato] x"], { metricas: { flesch: 70, nota: n } }), { nivel: "iniciante", formato: "artigo" }, config);
+    const juiz = c.find((x) => x.id === "juiz")!;
+    expect(juiz.estado).toBe("nao_rodou");
+    expect(juiz.detalhe).toContain("abaixo do mínimo");
+  });
+
   it("cobertura e numeros contam como fidelidade aos fatos", () => {
     const c = checagens(tentativa(["[numeros] numero '7' nao existe na ancora."]), { nivel: "avancado", formato: "artigo" }, config);
     expect(c.find((x) => x.id === "fatos")!.estado).toBe("falhou");

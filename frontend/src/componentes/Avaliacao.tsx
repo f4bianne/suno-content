@@ -1,11 +1,28 @@
 import { useState } from "react";
-import type { Config, Ramo } from "../tipos";
-import { checagens, resumir, type Estado } from "../util/avaliacao";
+import type { Config, Ramo, Tentativa } from "../tipos";
+import { checagens, nota, resumir, type Estado } from "../util/avaliacao";
 import { textoDe } from "../util/conteudo";
 import { diferenca, proporcaoAlterada } from "../util/diff";
 
-const SIMBOLO: Record<Estado, string> = { ok: "✓", falhou: "✕", nao_rodou: "–" };
-const ROTULO: Record<Estado, string> = { ok: "passou", falhou: "não passou", nao_rodou: "não chegou a rodar" };
+const SIMBOLO: Record<Estado, string> = { ok: "✓", aviso: "!", falhou: "✕", nao_rodou: "–" };
+const ROTULO: Record<Estado, string> = { ok: "passou", aviso: "passou com ressalva", falhou: "não passou", nao_rodou: "não chegou a rodar" };
+
+/** "Nota 0,91 (mínimo 0,85)", com o motivo quando a nota sozinha não explica a reprovação. */
+function linhaDaNota(n: NonNullable<Tentativa["metricas"]["nota"]>): string {
+  const base = `Nota ${nota(n.total)} (mínimo ${nota(n.limiar)})`;
+  if (n.bloqueios.length) return `${base}, mas bloqueada por: ${n.bloqueios.join(", ")}`;
+  if (n.abaixo_do_piso.length) return `${base}, mas abaixo do mínimo em: ${n.abaixo_do_piso.join(", ")}`;
+  return base;
+}
+
+function manchete(ramo: Ramo, final: Tentativa, aprovadas: number, total: number): string {
+  const n = final.metricas.nota;
+  if (ramo.status === "aprovado") {
+    if (!n) return "Passou em todas as conferências";      // versões antigas, de antes da nota
+    return aprovadas === total ? `Passou em todas as conferências · nota ${nota(n.total)}` : `Aprovado com nota ${nota(n.total)} (mínimo ${nota(n.limiar)}), com ressalvas`;
+  }
+  return n ? `${linhaDaNota(n)} · passou em ${aprovadas} de ${total} conferências` : `Passou em ${aprovadas} de ${total} conferências`;
+}
 
 interface Props { ramo: Ramo; config: Config | null }
 
@@ -22,7 +39,7 @@ export default function Avaliacao({ ramo, config }: Props) {
   return (
     <section className="cartao" aria-labelledby="t-aval">
       <h2 className="rotulo-secao" id="t-aval">Como foi avaliado</h2>
-      <p className="manchete">{ramo.status === "aprovado" ? "Passou em todas as conferências" : `Passou em ${aprovadas} de ${lista.length} conferências`}</p>
+      <p className="manchete">{manchete(ramo, final, aprovadas, lista.length)}</p>
       <ul className="checagens">
         {lista.map((c) => (
           <li key={c.id}>
@@ -45,7 +62,8 @@ export default function Avaliacao({ ramo, config }: Props) {
               <span className="titulo">
                 Tentativa {i + 1}: <span className={t.aprovado ? "selo ok" : "selo ruim"}>{t.aprovado ? "▲ aprovada" : "▼ reprovada"}</span>
               </span>
-              {motivo && <span className="apoio">{t.falhas.length > 1 ? `${t.falhas.length} problemas. Primeiro: ` : "Problema: "}{motivo}</span>}
+              {t.metricas.nota && <span className="apoio">{linhaDaNota(t.metricas.nota)}.</span>}
+              {motivo && <span className="apoio">{t.falhas.length > 1 ? `${t.falhas.length} ${t.aprovado ? "ressalvas" : "problemas"}. Primeiro: ` : t.aprovado ? "Ressalva: " : "Problema: "}{motivo}</span>}
               {t.metricas.explicacoes_inseridas && t.metricas.explicacoes_inseridas.length > 0 && (
                 <span className="legenda">O sistema acrescentou a definição do glossário em: {t.metricas.explicacoes_inseridas.join(", ")}.</span>
               )}

@@ -1,7 +1,11 @@
 import type { Config, Ramo, Tentativa } from "../tipos";
 
-/** "ok" passou; "falhou" reprovou; "nao_rodou" não chegou a ser avaliado (o juiz só roda depois das regras). */
-export type Estado = "ok" | "falhou" | "nao_rodou";
+/** "ok" passou; "aviso" teve problema, mas a nota do texto alcançou o limiar; "falhou" reprovou; "nao_rodou" não
+ * chegou a ser avaliado (o juiz não é chamado quando as regras já deixam a nota abaixo do mínimo). */
+export type Estado = "ok" | "aviso" | "falhou" | "nao_rodou";
+
+/** Nota de 0 a 1 em formato brasileiro: 0,91. */
+export const nota = (v: number) => v.toFixed(2).replace(".", ",");
 export interface Checagem { id: string; titulo: string; detalhe: string; estado: Estado; motivo?: string }
 
 const limitar = (v: number) => Math.max(0, Math.min(100, v));
@@ -22,7 +26,7 @@ export function resumir(msg: string, max = 150): string {
 export function faixaFlesch(config: Config | null, ramo: Pick<Ramo, "nivel" | "formato">): [number, number] | null {
   const l = config?.limiares[ramo.nivel];
   if (!l) return null;
-  return (ramo.formato === "video" && l.flesch_video) || l.flesch;
+  return (ramo.formato === "video" && l.flesch_video) || (ramo.formato === "carrossel" && l.flesch_carrossel) || l.flesch;
 }
 
 /** Traduz as métricas técnicas em perguntas simples de sim ou não. */
@@ -30,9 +34,11 @@ export function checagens(t: Tentativa, ramo: Pick<Ramo, "nivel" | "formato">, c
   const faixa = faixaFlesch(config, ramo);
   const minimo = config?.limiares[ramo.nivel]?.cobertura_minima;
   const m = t.metricas;
+  // Num texto aprovado, um problema leve não reprovou: a nota alcançou o limiar mesmo com ele.
+  const comFalha: Estado = t.aprovado ? "aviso" : "falhou";
   const regra = (id: string, titulo: string, detalhe: string, ...etiquetas: string[]): Checagem => {
     const falhas = falhasDaRegra(t, ...etiquetas);
-    return { id, titulo, detalhe, estado: falhas.length ? "falhou" : "ok", motivo: falhas.length ? resumir(falhas[0]) : undefined };
+    return { id, titulo, detalhe, estado: falhas.length ? comFalha : "ok", motivo: falhas.length ? resumir(falhas[0]) : undefined };
   };
 
   const leitura = regra(
@@ -51,9 +57,10 @@ export function checagens(t: Tentativa, ramo: Pick<Ramo, "nivel" | "formato">, c
     regra("termos", "Termos técnicos adequados ao nível", "Jargão permitido para quem vai ler", "glossario"),
     fatos,
     regra("conselho", "Sem conselho de investimento", "Informa, mas não recomenda comprar ou vender", "recomendacao"),
-    regra("formato", "Dentro dos limites do formato", "Tamanho, quantidade de slides ou duração", "formato"),
+    regra("formato", "Dentro dos limites do formato", "Tamanho, quantidade de slides ou duração", "formato", "duracao"),
   ];
   const algumaFalhou = deRegras.some((c) => c.estado === "falhou");
+  const juizNaoChamado = m.nota?.juiz === "nao_chamado";
 
   let juiz: Checagem;
   const falhasJuiz = falhasDaRegra(t, "juiz");
@@ -61,15 +68,16 @@ export function checagens(t: Tentativa, ramo: Pick<Ramo, "nivel" | "formato">, c
     juiz = {
       id: "juiz", titulo: "Revisão do juiz (outro modelo)",
       detalhe: `Fidelidade ${t.veredito.nota_fidelidade}/5 · adequação ao nível ${t.veredito.nota_adequacao_nivel}/5`,
-      estado: falhasJuiz.length ? "falhou" : "ok", motivo: falhasJuiz.length ? resumir(falhasJuiz[0]) : undefined,
+      estado: falhasJuiz.length ? comFalha : "ok", motivo: falhasJuiz.length ? resumir(falhasJuiz[0]) : undefined,
     };
   } else if (falhasJuiz.length) {
     juiz = { id: "juiz", titulo: "Revisão do juiz (outro modelo)", detalhe: "O juiz não conseguiu avaliar", estado: "falhou", motivo: resumir(falhasJuiz[0]) };
   } else {
+    const naoRodou = juizNaoChamado || (!m.nota && algumaFalhou);   // versões antigas, sem nota: o juiz só rodava sem falha
     juiz = {
       id: "juiz", titulo: "Revisão do juiz (outro modelo)",
-      detalhe: algumaFalhou ? "Só avalia depois que as regras passam" : "Revisão de fidelidade e de nível",
-      estado: algumaFalhou ? "nao_rodou" : "ok",
+      detalhe: naoRodou ? "Não foi chamado: as regras já deixaram a nota abaixo do mínimo" : "Revisão de fidelidade e de nível",
+      estado: naoRodou ? "nao_rodou" : "ok",
     };
   }
   return [...deRegras, juiz];

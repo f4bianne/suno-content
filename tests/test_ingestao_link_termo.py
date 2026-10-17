@@ -175,10 +175,18 @@ def test_termo_desconhecido_e_termo_curto(indice):
 def test_ingerir_termo_registra_termo_e_url(indice):
     dados = pdf_minimo([TEXTO_FINANCEIRO * 2])
     c = cliente({API_ATAS: (200, "application/json", ATAS.encode()), URL_ATA: (200, "application/pdf", dados)})
-    d = ingerir_termo("Copom", indice, CFG, c)
+    d = ingerir_termo("taxa Selic", indice, CFG, c)
     p = d.proveniencia
-    assert p.tipo == "termo" and p.origem == "Copom" and p.url == URL_ATA
+    assert p.tipo == "termo" and p.url == URL_ATA and p.origem == "taxa Selic"     # a origem é o que foi pesquisado
+    assert p.documento == "Ata da 281ª reunião do Copom (16/09/2026)"
     assert p.sha256_bruto == documento.sha256_bytes(dados)
+
+
+def test_termo_periodico_tem_nome_do_documento(indice):
+    url = "https://www.bcb.gov.br/content/ri/relatorioinflacao/202606/rpm202606p.pdf"
+    r = termo.resolver("inflação", indice, CFG, cliente({url: (200, "application/pdf", b"")}), hoje=date(2026, 10, 9))
+    assert r.documento == "Relatório de Política Monetária de 06/2026"
+    assert termo.resolver("fundos de investimento", indice, CFG, cliente({})).documento == "Resolução CVM 175 (fundos de investimento)"
 
 
 def test_ata_recente_tenta_de_novo_quando_a_api_falha(monkeypatch):

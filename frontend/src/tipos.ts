@@ -19,6 +19,12 @@ export interface Metricas {
   densidade?: { contagem: Record<string, number>; nivel23_por_100_palavras: number };
   plano_revisao?: PlanoRevisao;
   explicacoes_inseridas?: string[];   // termos em que o sistema acrescentou a definição do glossário
+  nota?: Nota;
+}
+/** Nota do avaliador contra o limiar do nível (avaliador/pontuacao.py). */
+export interface Nota {
+  total: number; limiar: number; por_metrica: Record<string, number>; bloqueios: string[]; abaixo_do_piso: string[];
+  juiz: "avaliou" | "nao_chamado" | "indisponivel"; aprovado: boolean;
 }
 /** O que o agente revisor orientou para a tentativa seguinte. */
 export interface PlanoRevisao { diagnostico: string; acoes: string[]; manter: string[] }
@@ -30,6 +36,7 @@ export interface Ramo { nivel: Nivel; formato: Formato; status: "aprovado" | "bl
 export interface Processamento {
   gerado_em: string | null; execucao_id: string | null; do_cache: boolean; config: { modelos?: Record<string, string> };
   documento_chave: string; origem: string; url: string | null;
+  tipo?: TipoEntrada | null; documento_nome?: string | null;   // no termo, a origem é o que foi pesquisado e este é o documento achado
   ancora: { fatos: Fato[] }; fatos_descartados: [string, string][]; ramos: Ramo[];
 }
 
@@ -42,12 +49,14 @@ export interface Job {
   id: string; status: "ingerindo" | "processando" | "concluido" | "erro"; erro: string | null; eventos: Evento[];
   resultado: Processamento | null; entrada: { tipo: string; valor: string };
 }
+export type TipoEntrada = "termo" | "link" | "pdf";
 export interface ResumoExecucao {
-  id: string; documento: string; origem: string; url: string | null; tipo: string; escopo: string; criado_em: string; ramos: number; aprovados: number;
+  id: string; documento: string; origem: string; url: string | null; tipo: TipoEntrada; documento_nome?: string | null;
+  escopo: string; criado_em: string; ramos: number; aprovados: number;
 }
 export interface Config {
   niveis: Nivel[]; formatos: Formato[];
-  limiares: Record<Nivel, { flesch: [number, number]; flesch_video?: [number, number]; cobertura_minima: number }>;
+  limiares: Record<Nivel, { flesch: [number, number]; flesch_video?: [number, number]; flesch_carrossel?: [number, number]; cobertura_minima: number }>;
 }
 export interface Relacionado {
   id: string; origem: string; criado_em: string; ramos: number; aprovados: number; entidades_comuns: string[]; afinidade: number;

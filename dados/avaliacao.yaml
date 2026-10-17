@@ -19,10 +19,29 @@ niveis:
   avancado:
     flesch_video: [0, 60]   # idem: vídeos avançados gerados ficaram entre 52 e 60
     flesch: [0, 50]   # calibrado: atas, relatórios e normas têm mediana 30-45 e P90 de 54-55; [0, 40] reprovaria metade deles
+    # Slide de até 220 caracteres não comporta frase de 40 palavras: os 37 carrosséis avançados gerados têm mediana 51,
+    # com 21 palavras por slide. Com [0, 50], metade reprovava sem ter como corrigir.
+    flesch_carrossel: [0, 60]
     cobertura_minima: 0.90
     nivel_maximo_termo_sem_explicacao: 3
     nivel_maximo_termo_com_explicacao: 3
     densidade_minima_termos_nivel23_por_100_palavras: 1.0   # calibrado: o grupo de menor média no corpus (relatórios do BC) tem 1,3
+
+# Nota do avaliador contra o limiar do nível (case, item 5.1.5). Regras em avaliador/pontuacao.py.
+# Hipótese inicial: calibrar com um conjunto fixo de documentos antes de mexer nos números.
+pontuacao:
+  # Reprovam com qualquer nota: o que não pode ir para o ar em ambiente regulado.
+  # Para tratar o "zero jargão" do iniciante como absoluto, acrescente glossario aqui.
+  bloqueios: [numeros, recomendacao, duracao, fidelidade]
+  fidelidade_minima_do_juiz: 4          # nota de fidelidade do juiz abaixo disso é bloqueio
+  pesos: {legibilidade: 0.20, glossario: 0.20, cobertura: 0.20, formato: 0.10, rubrica: 0.20, fidelidade: 0.10}
+  limiar: {iniciante: 0.85, intermediario: 0.85, avancado: 0.85}
+  # Mínimo de cada métrica, para a média não esconder um defeito grave (texto avançado entregue como intermediário
+  # tinha legibilidade 0,28 e média 0,86). Com penalidade de 0,25: 1 termo indevido passa, 2 reprovam; 1 item da
+  # rubrica faltando passa, 2 reprovam; Flesch até 6 pontos fora da faixa passa.
+  piso: {legibilidade: 0.6, glossario: 0.6, cobertura: 0.6, formato: 0.5, rubrica: 0.5, fidelidade: 0.5}
+  flesch_tolerancia: 15                 # pontos fora da faixa até a nota de legibilidade chegar a zero
+  penalidade_por_ocorrencia: 0.25       # cada termo indevido, problema de formato ou afirmação sem suporte
 
 # Números fora da âncora reprovam. Só o iniciante pode arredondar, desde que declare
 # ("quase", "cerca de") e fique dentro da tolerância relativa.
@@ -35,11 +54,16 @@ formatos:
   artigo:
     max_fatos: 12
     palavras: [250, 900]   # hipótese: documentos curtos (atas) não sustentam 400+ palavras sem enchimento
+  # Nos formatos curtos, cobertura foi o que mais reprovou: com 2 chances, o texto precisa caber na primeira.
+  # Um fato com vários números (por exemplo, projeções para 3 anos) conta quando a maioria deles aparece; os números
+  # citados continuam conferidos contra a âncora, então perde-se detalhe, não fidelidade.
   carrossel:
-    max_fatos: 8        # nem todo fato central cabe em um formato curto; o gerador recebe só os primeiros
+    max_fatos: 6        # nem todo fato central cabe em um formato curto; o gerador recebe só os primeiros (era 8)
+    fracao_minima_numeros_por_fato: 0.5
     slides: [5, 10]
     caracteres_por_slide: 220
   video:
-    max_fatos: 5
+    max_fatos: 4        # era 5: em 60 s de fala, com contexto e analogias, 5 fatos não cabiam
+    fracao_minima_numeros_por_fato: 0.5
     duracao_maxima_s: 60
     palavras_por_segundo: 2.5

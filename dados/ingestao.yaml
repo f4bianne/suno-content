@@ -47,9 +47,11 @@ fontes_periodicas:
   rpm_recente:
     # Do período mais novo para o mais antigo; vale o primeiro que existir.
     url: "https://www.bcb.gov.br/content/ri/relatorioinflacao/{ano}{mes}/rpm{ano}{mes}p.pdf"
+    titulo: "Relatório de Política Monetária de {mes}/{ano}"
     meses: ["12", "09", "06", "03"]
     anos_para_tras: 2
   ref_recente:
     url: "https://www.bcb.gov.br/content/publicacoes/ref/{ano}{mes}/RELESTAB{ano}{mes}-refPub.pdf"
+    titulo: "Relatório de Estabilidade Financeira de {mes}/{ano}"
     meses: ["11", "10", "05", "04"]
     anos_para_tras: 2

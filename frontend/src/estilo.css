@@ -2,7 +2,7 @@
 :root {
   --suno-red: #D42126; --ink: #222222; --inverse: #131313; --positive: #008500; --negative: #D42126;
   --muted: #767676; --logo-grey: #616161; --surface: #FFFFFF; --subtle: #F8F8F8; --divider: #EFEFEF; --rule: #D9D9D9;
-  --on-inverse: #FFFFFF; --realce-2: #FDF0F0; --realce-3: #F8D7D8;
+  --on-inverse: #FFFFFF; --realce-2: #FDF0F0; --realce-3: #F8D7D8; --caution: #A15C00;
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-6: 24px; --space-8: 32px;
   --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px;
 }
@@ -10,7 +10,7 @@
   :root {
     --suno-red: #E0474E; --ink: #F2F2F2; --inverse: #F8F8F8; --positive: #3CB43C; --negative: #E0474E;
     --muted: #A6A6A6; --logo-grey: #D6D6D6; --surface: #131313; --subtle: #1C1C1C; --divider: #2A2A2A; --rule: #9A9A9A;
-    --on-inverse: #131313; --realce-2: #2B1B1C; --realce-3: #4A2527;
+    --on-inverse: #131313; --realce-2: #2B1B1C; --realce-3: #4A2527; --caution: #E0A040;
   }
 }
 * { box-sizing: border-box; }
@@ -140,7 +140,9 @@ input[type="file"] { width: 100%; padding: var(--space-3) 0; }
 .checagens { list-style: none; margin: 0; padding: 0; }
 .checagens li { display: grid; grid-template-columns: 28px 1fr; gap: var(--space-3); padding: var(--space-3) 0; border-top: 1px solid var(--divider); }
 .marca { font-weight: 800; font-size: 16px; line-height: 22px; }
-.marca.ok { color: var(--positive); } .marca.falhou { color: var(--negative); } .marca.nao_rodou { color: var(--muted); }
+.marca.ok { color: var(--positive); } .marca.falhou { color: var(--negative); } .grupo-historico h3 { margin: 0 0 var(--space-2); font-weight: 700; }
+.grupo-historico + .grupo-historico { margin-top: var(--space-6); }
+.marca.nao_rodou { color: var(--muted); } .marca.aviso { color: var(--caution); }
 .motivo { margin-top: var(--space-1); padding-left: var(--space-3); border-left: 2px solid var(--negative); font-size: 13px; line-height: 18px; }
 .tentativas { margin-top: var(--space-4); border-top: 1px solid var(--divider); padding-top: var(--space-4); }
 .tentativas summary { cursor: pointer; font-weight: 700; }

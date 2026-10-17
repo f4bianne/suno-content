@@ -82,8 +82,10 @@ class Cobertura:
     indeterminados: list[str]   # fatos sem número nem entidade: ficam para o Juiz
 
 
-def cobertura(texto: str, ancora: Ancora) -> Cobertura:
-    """Fração dos fatos decidíveis presentes no texto (pelos números ou, sem números, pelas entidades)."""
+def cobertura(texto: str, ancora: Ancora, fracao_numeros: float = 1.0) -> Cobertura:
+    """Fração dos fatos decidíveis presentes no texto (pelos números ou, sem números, pelas entidades).
+
+    `fracao_numeros` é a parte dos números de um fato que precisa aparecer para ele contar (1.0 = todos)."""
     no_texto = {round(v, 6) for v in numeros_em(texto)}
     minusculo = texto.lower()
     presentes, ausentes, indeterminados = [], [], []
@@ -93,11 +95,14 @@ def cobertura(texto: str, ancora: Ancora) -> Cobertura:
             indeterminados.append(f.id)
             continue
         # Com número, o número decide (o texto pode dizer "inflação" em vez de "IPCA").
-        # Sem número, as entidades-chave precisam aparecer.
         if nums:
-            ok = all(round(v, 6) in no_texto for v in nums)
+            achados = sum(round(v, 6) in no_texto for v in nums)
+            (presentes if achados and achados >= fracao_numeros * len(nums) else ausentes).append(f.id)
+        # Sem número, as entidades escritas igual confirmam o fato. A falta delas não prova ausência: o texto simples
+        # diz "países ricos" em vez de "economias avançadas". Nesse caso, quem decide é o Juiz.
+        elif all(e.lower() in minusculo for e in f.entidades):
+            presentes.append(f.id)
         else:
-            ok = all(e.lower() in minusculo for e in f.entidades)
-        (presentes if ok else ausentes).append(f.id)
+            indeterminados.append(f.id)
     decididos = len(presentes) + len(ausentes)
     return Cobertura(len(presentes) / decididos if decididos else 1.0, presentes, ausentes, indeterminados)

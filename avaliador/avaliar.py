@@ -47,9 +47,9 @@ def avaliar(conteudo: formatos.Conteudo, nivel: str, indice: glossario.Indice,
     falhas: list[Falha] = []
     metricas: dict = {"nivel": nivel, "formato": formatos.formato_de(conteudo)}
 
-    # Formato
+    # Formato. A duração do vídeo tem etiqueta própria: o case fixa "em até 60s", então ela bloqueia (ver pontuacao.py).
     for msg in formatos.verificar(conteudo, cfg["formatos"]):
-        falhas.append(Falha("formato", msg))
+        falhas.append(Falha("duracao" if msg.startswith(("roteiro marca", "fala de")) else "formato", msg))
 
     # Legibilidade
     leg = flesch_pt(texto, formatos.unidades_flesch(conteudo))
@@ -86,9 +86,10 @@ def avaliar(conteudo: formatos.Conteudo, nivel: str, indice: glossario.Indice,
         for x in res.invalidos:
             falhas.append(Falha("numeros", f"número '{x}' não existe na âncora"))
         metricas["numeros_arredondados"] = res.arredondados
-        cob = anc.cobertura(texto, ancora)
+        cob = anc.cobertura(texto, ancora, cfg["formatos"].get(metricas["formato"], {}).get("fracao_minima_numeros_por_fato", 1.0))
         metricas["cobertura"] = round(cob.fracao, 3)
         metricas["fatos_ausentes"] = cob.ausentes
+        metricas["fatos_presentes"] = cob.presentes
         indeterminados = cob.indeterminados
         if cob.fracao < regras["cobertura_minima"]:
             falhas.append(Falha("cobertura", f"cobertura {cob.fracao:.0%} abaixo de {regras['cobertura_minima']:.0%}; ausentes: {', '.join(cob.ausentes)}"))

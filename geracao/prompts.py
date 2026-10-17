@@ -15,7 +15,7 @@ PERFIL = {
     ),
     "intermediario": (
         "leitores intermediários, que conhecem o vocabulário de mercado padrão (CDI, Selic, IPCA, dividendos) e não precisam "
-        "de didatismo infantil. Frases de 20 a 30 palavras, com vocabulário de mercado. Foco em alocação e tendências. "
+        "de didatismo infantil. Frases de 15 a 20 palavras, com vocabulário de mercado. Foco em alocação e tendências. "
         "Termos mais técnicos só com uma explicação curta. OBRIGATÓRIO: inclua uma frase que relacione os dados a alocação e "
         "tendências (o que os dados sugerem para renda fixa, renda variável ou câmbio), sem recomendar compra ou venda."
     ),
@@ -124,7 +124,9 @@ def instrucao_formato(formato: str, cfg: dict) -> str:
 
 DICA_DE_LEITURA = {
     "iniciante": "frases de 8 a 14 palavras, palavras curtas do dia a dia e um número por frase",
-    "intermediario": "frases de 20 a 28 palavras, com vocabulário de mercado, sem frases telegráficas",
+    # Vocabulário de mercado tem ~2,1 sílabas por palavra: com frases de 26 palavras o índice fica perto de 44, na
+    # borda da faixa, e metade dos textos caía fora; com 15 a 20 palavras ele fica perto de 50, o meio da faixa.
+    "intermediario": "frases de 15 a 20 palavras, com vocabulário de mercado, sem frases telegráficas",
     "avancado": "frases longas e densas, de 25 a 40 palavras, com vocabulário técnico",
 }
 
@@ -181,10 +183,12 @@ def fatos_em_texto(ancora: Ancora) -> str:
     return "\n".join(f"[{f.id}] {f.texto}" + (f" (números: {', '.join(f.numeros)})" if f.numeros else "") for f in ancora.fatos)
 
 
-def relatorio_de_falhas(falhas: list[str], anterior: Conteudo) -> str:
+def relatorio_de_falhas(falhas: list[str], anterior: Conteudo, nota: str | None = None) -> str:
     itens = "\n".join(f"- {x}" for x in falhas)
     return (
-        "A VERSÃO ANTERIOR FOI REPROVADA PELO AVALIADOR. Corrija TODOS os problemas abaixo e reescreva por inteiro. "
+        "A VERSÃO ANTERIOR FOI REPROVADA PELO AVALIADOR. "
+        + (f"{nota} Os bloqueios vêm primeiro; depois, as métricas de nota mais baixa. " if nota else "")
+        + "Corrija TODOS os problemas abaixo e reescreva por inteiro. "
         "Esta é a ÚLTIMA tentativa: não haverá outra. Faça uma correção CIRÚRGICA: copie literalmente tudo que já estava certo "
         "(fatos, números, termos explicados, frases que não têm problema) e altere só os trechos ligados aos problemas "
         "abaixo. Corrigir um problema não pode criar outro: ao incluir um fato, mantenha o tamanho das frases do nível; ao "

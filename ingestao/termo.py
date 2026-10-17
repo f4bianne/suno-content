@@ -24,6 +24,7 @@ class Resolucao:
     termo_canonico: str | None   # nome no glossário, se houver
     fonte: str                   # nome da fonte escolhida
     url: str                     # documento oficial a ingerir
+    documento: str = ""          # nome do documento achado, por exemplo "Ata da 281ª reunião do Copom (16/09/2026)"
 
 
 def canonico(termo: str, indice: glossario.Indice) -> str | None:
@@ -33,7 +34,8 @@ def canonico(termo: str, indice: glossario.Indice) -> str | None:
     return achados[0].termo.termo if achados else None
 
 
-def _recente_periodico(regras: dict, cliente: httpx.Client, hoje: date) -> str | None:
+def _recente_periodico(regras: dict, cliente: httpx.Client, hoje: date) -> tuple[str, str] | None:
+    """(url, nome do documento) do período mais recente que existe."""
     for deslocamento in range(regras["anos_para_tras"] + 1):
         ano = hoje.year - deslocamento
         for mes in regras["meses"]:
@@ -42,10 +44,16 @@ def _recente_periodico(regras: dict, cliente: httpx.Client, hoje: date) -> str |
             url = regras["url"].format(ano=ano, mes=mes)
             try:
                 if cliente.head(url, follow_redirects=True, timeout=30).status_code == 200:
-                    return url
+                    return url, regras["titulo"].format(ano=ano, mes=mes)
             except httpx.HTTPError:
                 continue
     return None
+
+
+def nome_da_ata(url: str) -> str:
+    """'.../Copom281-not20260916281.pdf' -> 'Ata da 281ª reunião do Copom (16/09/2026)'."""
+    m = re.search(r"Copom(\d+)-not(\d{4})(\d{2})(\d{2})", url)
+    return f"Ata da {m[1]}ª reunião do Copom ({m[4]}/{m[3]}/{m[2]})" if m else "Ata do Copom"
 
 
 def _ata_recente(regras: dict, cliente: httpx.Client, tentativas: int = 3, espera_s: float = 2.0) -> str | None:
@@ -82,14 +90,15 @@ def resolver(termo: str, indice: glossario.Indice | None = None, cfg: dict | Non
     cliente = cliente or httpx.Client(headers={"User-Agent": "Mozilla/5.0"})
     try:
         if entrada["fonte"] == "url":
-            url = entrada["url"]
+            url, nome = entrada["url"], entrada["nome"]
         elif entrada["fonte"] == "ata_copom_recente":
             url = _ata_recente(cfg["fontes_periodicas"]["ata_copom_recente"], cliente)
+            nome = nome_da_ata(url) if url else ""
         else:
-            url = _recente_periodico(cfg["fontes_periodicas"][entrada["fonte"]], cliente, hoje or date.today())
+            url, nome = _recente_periodico(cfg["fontes_periodicas"][entrada["fonte"]], cliente, hoje or date.today()) or (None, "")
     finally:
         if dono:
             cliente.close()
     if not url:
         raise ErroIngestao(f"Não consegui localizar o documento mais recente para \"{termo}\".")
-    return Resolucao(termo, chave, cano, entrada["nome"], url)
+    return Resolucao(termo, chave, cano, entrada["nome"], url, nome)

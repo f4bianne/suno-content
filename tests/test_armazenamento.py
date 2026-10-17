@@ -61,6 +61,30 @@ def test_segunda_chamada_sai_do_cache_sem_chamar_modelos(indice, cfg):
     assert len(repo.listar()) == 1
 
 
+def test_cada_geracao_aparece_pelo_que_foi_pesquisado(indice, cfg):
+    """Pesquisar "taxa selic" depois de "Copom" mostrava "Copom": o registro do documento guarda a primeira busca."""
+    repo = Repositorio("sqlite://")
+    rodar(repo, indice, cfg, d=doc(origem="Copom"))
+    selic = doc(origem="taxa selic")
+    selic.proveniencia.documento = "Ata da 281ª reunião do Copom (16/09/2026)"
+    cache = rodar(repo, indice, cfg, d=selic)
+    assert cache.do_cache and cache.origem == "taxa selic" and cache.documento_nome == "Ata da 281ª reunião do Copom (16/09/2026)"
+    nova = rodar(repo, indice, cfg, d=selic, forcar=True)
+    lista = repo.listar()
+    assert [x["origem"] for x in lista] == ["taxa selic", "Copom"] and lista[0]["tipo"] == "termo"
+    assert lista[0]["documento_nome"] == "Ata da 281ª reunião do Copom (16/09/2026)"
+    assert repo.abrir(nova.execucao_id).origem == "taxa selic"
+    assert len({x["documento"] for x in lista}) == 1                    # o documento continua um só no banco
+
+
+def test_link_e_pdf_aparecem_pelo_link_e_pelo_nome_do_arquivo(indice, cfg):
+    repo = Repositorio("sqlite://")
+    rodar(repo, indice, cfg, d=doc(tipo="link", origem="https://www.bcb.gov.br/ata.pdf"))
+    rodar(repo, indice, cfg, d=doc(tipo="pdf", texto=TEXTO + " outro", origem="ata_copom.pdf"), sessao="s1")
+    por_tipo = {x["tipo"]: x["origem"] for x in repo.listar("s1")}
+    assert por_tipo == {"link": "https://www.bcb.gov.br/ata.pdf", "pdf": "ata_copom.pdf"}
+
+
 def test_forcar_gera_outra_versao_sem_apagar_a_anterior(indice, cfg):
     repo = Repositorio("sqlite://")
     a = rodar(repo, indice, cfg)

@@ -87,6 +87,13 @@ acessos = Table(
 )
 
 
+def _entrada(config: dict, tipo: str, origem: str) -> tuple[str, str, str | None]:
+    """(tipo, o que a pessoa usou, nome do documento). Gerações novas guardam a entrada no config; as antigas usam o
+    registro do documento, que tem a entrada de quem o trouxe primeiro."""
+    e = (config or {}).get("entrada") or {}
+    return e.get("tipo") or tipo, e.get("valor") or origem, e.get("documento")
+
+
 def _utc(d: datetime) -> datetime:
     return d if d.tzinfo else d.replace(tzinfo=timezone.utc)
 
@@ -175,7 +182,7 @@ class Repositorio:
     def abrir(self, execucao_id: str, niveis: list[str] | None = None, formatos: list[str] | None = None,
               do_cache: bool = False) -> Processamento | None:
         with self.engine.connect() as c:
-            e = c.execute(select(execucoes, documentos.c.chave, documentos.c.origem, documentos.c.url)
+            e = c.execute(select(execucoes, documentos.c.chave, documentos.c.origem, documentos.c.url, documentos.c.tipo)
                           .join(documentos, documentos.c.id == execucoes.c.documento_id)
                           .where(execucoes.c.id == execucao_id)).mappings().first()
             if e is None:
@@ -190,9 +197,11 @@ class Repositorio:
                     tentativas=[Tentativa(n=t["n"], aprovado=t["aprovado"], falhas=t["falhas"], metricas=t["metricas"],
                                           veredito=t["veredito"], conteudo=t["conteudo"], segundos_geracao=t["segundos_geracao"],
                                           segundos_avaliacao=t["segundos_avaliacao"], chamadas_llm=t["chamadas_llm"]) for t in ts]))
+        tipo, origem, nome = _entrada(e["config"], e["tipo"], e["origem"])
         return Processamento(
             gerado_em=_utc(e["criado_em"]), execucao_id=execucao_id, do_cache=do_cache, config=e["config"],
-            documento_chave=e["chave"], origem=e["origem"], url=e["url"], ancora=Ancora.model_validate(e["ancora"]),
+            documento_chave=e["chave"], origem=origem, url=e["url"], tipo=tipo, documento_nome=nome,
+            ancora=Ancora.model_validate(e["ancora"]),
             fatos_descartados=[tuple(x) for x in e["descartados"]], ramos=lista)
 
     def listar(self, sessao: str | None = None, limite: int = 100) -> list[dict]:
@@ -207,7 +216,9 @@ class Repositorio:
             saida = []
             for e in linhas:
                 status = [s for (s,) in c.execute(select(ramos.c.status).where(ramos.c.execucao_id == e["id"]))]
-                saida.append({"id": e["id"], "documento": e["chave"], "origem": e["origem"], "url": e["url"], "tipo": e["tipo"], "escopo": e["escopo"],
+                tipo, origem, nome = _entrada(e["config"], e["tipo"], e["origem"])
+                saida.append({"id": e["id"], "documento": e["chave"], "origem": origem, "url": e["url"], "tipo": tipo,
+                              "documento_nome": nome, "escopo": e["escopo"],
                               "criado_em": _utc(e["criado_em"]).isoformat(), "ramos": len(status),
                               "aprovados": status.count("aprovado"), "modelos": e["config"].get("modelos"),
                               "segundos": round(e["segundos"], 1)})

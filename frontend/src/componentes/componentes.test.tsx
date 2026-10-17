@@ -236,6 +236,19 @@ describe("Entrada e histórico", () => {
     expect(onAbrir).toHaveBeenCalledWith("b2");
   });
 
+  it("histórico separa por tipo e mostra o termo, o link e o nome do PDF", () => {
+    render(<Historico onAbrir={vi.fn()} itens={[
+      { id: "a", documento: "d1", origem: "taxa selic", documento_nome: "Ata da 281ª reunião do Copom (16/09/2026)", url: null, tipo: "termo", escopo: "publico", criado_em: "2026-10-11T16:29:00Z", ramos: 9, aprovados: 5 },
+      { id: "b", documento: "d2", origem: "https://www.bcb.gov.br/ata.pdf", url: null, tipo: "link", escopo: "publico", criado_em: "2026-10-11T16:30:00Z", ramos: 9, aprovados: 6 },
+      { id: "c", documento: "d3", origem: "ata_copom.pdf", url: null, tipo: "pdf", escopo: "sessao", criado_em: "2026-10-11T16:31:00Z", ramos: 9, aprovados: 4 },
+    ]} />);
+    const grupo = (t: string) => screen.getByRole("heading", { name: t }).parentElement!;
+    expect(within(grupo("Termos pesquisados")).getByText("taxa selic")).toBeTruthy();
+    expect(within(grupo("Termos pesquisados")).getByText(/Ata da 281ª reunião do Copom/)).toBeTruthy();
+    expect(within(grupo("Links")).getByText("https://www.bcb.gov.br/ata.pdf")).toBeTruthy();
+    expect(within(grupo("PDFs enviados")).getByText("ata_copom.pdf")).toBeTruthy();
+  });
+
   it("histórico vazio explica o que acontece", () => {
     render(<Historico itens={[]} onAbrir={vi.fn()} />);
     expect(screen.getByText(/Nada gerado ainda/)).toBeTruthy();

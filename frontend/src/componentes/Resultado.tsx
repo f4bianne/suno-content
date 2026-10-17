@@ -38,6 +38,7 @@ export default function Resultado({ resultado, config, glossario, onNovo, histor
         </div>
         <p className="manchete" style={{ marginTop: 12 }}>{resultado.origem}</p>
         <p className="apoio">
+          {resultado.documento_nome && <>{resultado.documento_nome} · </>}
           {resultado.url && <><a href={resultado.url} target="_blank" rel="noreferrer noopener">ver o documento original</a> · </>}
           {dataBr(resultado.gerado_em)}{resultado.do_cache ? " · já estava guardado" : ""}
         </p>

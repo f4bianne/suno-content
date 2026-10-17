@@ -11,7 +11,7 @@ from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel
 
 from avaliador import avaliar as av
-from avaliador import formatos, glossario
+from avaliador import formatos, glossario, pontuacao
 from avaliador.ancora import Ancora
 from avaliador.juiz import Cliente, julgar, schema_plano
 from geracao import ajustes, prompts, revisor as agente_revisor, schemas
@@ -69,7 +69,7 @@ def _dica(f: av.Falha, ancora: Ancora, metricas: dict, indice: glossario.Indice 
                  if faltou else "")
         if faltou and nivel == "iniciante":   # acrescentar fato é o que derruba a leitura fácil: cada um em frase própria e curta
             extra += " Cada fato novo entra em uma frase só dele, com até 15 palavras e sem termo técnico, para a leitura continuar fácil."
-    elif f.metrica == "formato":
+    elif f.metrica in ("formato", "duracao"):
         tam = re.search(r"com (\d+) palavras \(esperado de (\d+) a (\d+)\)", f.mensagem)
         if tam and int(tam[1]) < int(tam[2]):
             n, lo = int(tam[1]), int(tam[2])
@@ -160,6 +160,7 @@ def construir_ramo(gerador: Cliente, juiz: Cliente, indice: glossario.Indice, cf
         t0, conteudo, indisponivel = time.time(), e["conteudo"], False
         tent = Tentativa(n=len(e.get("tentativas", [])) + 1, aprovado=False, falhas=[], segundos_geracao=round(e["segundos_geracao"], 2),
                          chamadas_llm=1)
+        nota = None
         if conteudo is None:
             tent.falhas = [f"[formato] a resposta não obedeceu ao formato pedido ({e['erro_geracao']}). Responda no schema."]
         else:
@@ -169,31 +170,38 @@ def construir_ramo(gerador: Cliente, juiz: Cliente, indice: glossario.Indice, cf
             if e.get("explicacoes_inseridas"):
                 tent.metricas["explicacoes_inseridas"] = e["explicacoes_inseridas"]
             tent.falhas = [_dica(f, e["ancora"], res.metricas, indice, e["nivel"]) for f in res.falhas]
-            if res.aprovado:   # o juiz só roda depois das regras: poupa chamadas e as regras já dão o feedback
+            # As regras dão o teto da nota (o juiz só pode baixá-la). Se o teto já não alcança o limiar, o juiz não muda
+            # o resultado: a chamada é poupada e as regras dão o feedback.
+            nota = pontuacao.pontuar(res, e["nivel"], cfg, juiz="nao_chamado")
+            if pontuacao.vale_chamar_o_juiz(nota):
+                falhas_das_regras = tent.falhas
                 for volta in range(tentativas_juiz):   # limite de uso passa com um pouco de espera
                     try:
                         v = julgar(juiz, formatos.texto_corrido(conteudo), e["nivel"], e["formato"], e["ancora"], res.indeterminados)
                         tent.chamadas_llm += 1
                         tent.veredito = v.model_dump()
-                        tent.falhas = _falhas_do_juiz(v)
+                        tent.falhas = falhas_das_regras + _falhas_do_juiz(v)
+                        nota = pontuacao.pontuar(res, e["nivel"], cfg, v)
                         indisponivel = False
                         break
                     except Exception as ex:
                         resp = getattr(ex, "response", None)
                         detalhe = f"HTTP {resp.status_code}: {resp.text[:120]}" if resp is not None else type(ex).__name__
-                        tent.falhas = [f"[juiz] não foi possível avaliar ({detalhe})"]
+                        tent.falhas = falhas_das_regras + [f"[juiz] não foi possível avaliar ({detalhe})"]
+                        nota.juiz = "indisponivel"   # sem o juiz, a fidelidade não foi conferida: não aprova
                         indisponivel = True
                         if resp is not None and resp.status_code == 400:
-                            break   # saída fora do schema: esperar não adianta, e o limite de uso não é o problema
+                            continue   # JSON fora do schema é intermitente: repete logo, porque esperar não adianta
                         if volta < tentativas_juiz - 1:
                             time.sleep(espera_juiz_s)
-        tent.aprovado = not tent.falhas
+            tent.metricas["nota"] = nota.em_dict()
+        tent.aprovado = nota is not None and nota.aprovado
         tent.segundos_avaliacao = round(time.time() - t0, 2)
         avisar({"tipo": "avaliado", "nivel": e["nivel"], "formato": e["formato"], "tentativa": tent.n, "aprovado": tent.aprovado,
                 "falhas": [x.split("]")[0] + "]" for x in tent.falhas], "flesch": tent.metricas.get("flesch")})
         feedback = None
         if not tent.aprovado:
-            feedback = (prompts.relatorio_de_falhas(tent.falhas, conteudo) if conteudo is not None
+            feedback = (prompts.relatorio_de_falhas(tent.falhas, conteudo, nota.resumo() if nota else None) if conteudo is not None
                         else "A tentativa anterior falhou: " + "; ".join(tent.falhas))
         saida = {"tentativas": [*e.get("tentativas", []), tent], "feedback": feedback,
                  "status": "aprovado" if tent.aprovado else "reprovado"}

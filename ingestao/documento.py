@@ -25,6 +25,7 @@ class Proveniencia(BaseModel):
     tipo: Literal["pdf", "link", "termo"]
     origem: str                      # nome do arquivo, URL ou termo digitado
     url: str | None = None           # URL final (links e termos resolvidos)
+    documento: str | None = None     # no termo: nome do documento achado, por exemplo "Ata da 281ª reunião do Copom"
     coletado_em: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     sha256_bruto: str                # hash dos bytes baixados ou enviados
 

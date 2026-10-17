@@ -17,10 +17,10 @@ def ingerir_link(url: str, indice: glossario.Indice | None = None, cfg: dict | N
 
 def ingerir_termo(texto: str, indice: glossario.Indice | None = None, cfg: dict | None = None,
                   cliente: httpx.Client | None = None) -> Documento:
-    """Resolve o termo para um documento oficial e o ingere; a proveniência registra o termo e a URL."""
+    """Resolve o termo para um documento oficial e o ingere; a proveniência registra o termo, o documento achado e a URL."""
     res = termo.resolver(texto, indice, cfg, cliente)
     doc = link.ler_link(res.url, indice, cfg, cliente)
     p = doc.proveniencia
-    doc.proveniencia = Proveniencia(tipo="termo", origem=texto, url=p.url or res.url,
+    doc.proveniencia = Proveniencia(tipo="termo", origem=texto, url=p.url or res.url, documento=res.documento or res.fonte,
                                     coletado_em=p.coletado_em, sha256_bruto=p.sha256_bruto)
     return doc

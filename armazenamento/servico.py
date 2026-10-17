@@ -28,12 +28,20 @@ def processar_com_banco(documento: Documento, clientes: grafo.Clientes, indice: 
             if observador:
                 observador({"tipo": "cache", "execucao": achado})
             repo.registrar_acesso(documento_id, True, achado)
-            return repo.abrir(achado, list(niveis), list(formatos), do_cache=True)
+            proc = repo.abrir(achado, list(niveis), list(formatos), do_cache=True)
+            # Termos diferentes levam ao mesmo documento: mostra o que foi pesquisado agora, não o de quem gerou.
+            p = documento.proveniencia
+            proc.origem, proc.tipo, proc.documento_nome = p.origem, p.tipo, p.documento or proc.documento_nome
+            return proc
 
     t0 = time.time()
     proc = grafo.processar(documento, clientes, indice, cfg, niveis=niveis, formatos=formatos, nivel_prioritario=nivel_prioritario,
                            max_tentativas=max_tentativas, concorrencia=concorrencia, observador=observador, max_fatos=max_fatos)
-    proc.config = snap
-    proc.execucao_id = repo.salvar_execucao(documento_id, proc, snap, h, list(niveis), list(formatos), time.time() - t0)
+    # A entrada desta geração (termo, link ou nome do PDF) vai junto da configuração, fora do hash do cache: o registro
+    # do documento é compartilhado e guarda só a entrada de quem o trouxe primeiro.
+    p = documento.proveniencia
+    gravado = {**snap, "entrada": {"tipo": p.tipo, "valor": p.origem, "documento": p.documento}}
+    proc.config = gravado
+    proc.execucao_id = repo.salvar_execucao(documento_id, proc, gravado, h, list(niveis), list(formatos), time.time() - t0)
     repo.registrar_acesso(documento_id, False, proc.execucao_id)
     return proc
