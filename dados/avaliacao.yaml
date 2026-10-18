@@ -1,5 +1,5 @@
 # Limiares do avaliador determinístico (roadmap, itens 6 e 7).
-# Regras de nível em planejamento/niveis.md. Calibração: scripts/calibra.py.
+# Regras de nível no README (seção "Níveis e formatos"). Calibração: scripts/calibra.py.
 # Calibrado = ajustado com medidas do corpus. O resto continua hipótese até haver textos gerados
 # (Fase 3): o corpus só tem textos técnicos, não há texto de referência de nível iniciante ou intermediário.
 
