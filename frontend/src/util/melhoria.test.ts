@@ -49,6 +49,16 @@ describe("diagnosticar", () => {
     expect(c.sugestao).toBe("Acrescente uma frase com a implicação analítica.");
   });
 
+  it("falhas de gráfico viram problema e sugestão próprios", () => {
+    expect(diagnosticar("[formato] slide 3 com gráfico tem 140 caracteres de texto (máximo 120). Respeite.", "iniciante"))
+      .toEqual({ problema: "O slide 3 tem gráfico e 140 caracteres de texto; com gráfico, o máximo é 120.",
+        sugestao: "Deixe no texto só o comentário do gráfico: os números já aparecem nele." });
+    expect(diagnosticar("[formato] gráfico no slide 1: o gancho e a conclusão não levam gráfico. X", "iniciante").sugestao)
+      .toBe("Mova o gráfico para um dos slides do meio.");
+    expect(diagnosticar("[numeros] gráfico traz o número '6,1', que não existe na âncora. Remova.", "iniciante").problema)
+      .toBe("O número 6,1 não está no documento (aparece no gráfico).");
+  });
+
   it("falha do serviço não é culpa do texto", () => {
     const d = diagnosticar("[juiz] não foi possível avaliar (HTTP 429: {\"error\":{}})", "iniciante");
     expect(d.tecnico).toBe(true);

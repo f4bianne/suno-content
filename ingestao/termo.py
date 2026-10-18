@@ -4,6 +4,7 @@ import time
 import unicodedata
 from dataclasses import dataclass
 from datetime import date
+from pathlib import Path
 
 import httpx
 
@@ -56,6 +57,26 @@ def nome_da_ata(url: str) -> str:
     return f"Ata da {m[1]}ª reunião do Copom ({m[4]}/{m[3]}/{m[2]})" if m else "Ata do Copom"
 
 
+# A API de atas do BC às vezes sai do ar por horas (responde 400 a tudo). A última ata encontrada fica guardada aqui e
+# vale enquanto a API não volta: os PDFs das atas continuam no ar, só a lista deles não.
+ULTIMA_ATA = Path(__file__).resolve().parent.parent / "dados" / "ultima_ata.txt"
+
+
+def _guardar_ultima_ata(url: str) -> None:
+    try:
+        ULTIMA_ATA.write_text(url, encoding="utf-8")
+    except OSError:
+        pass          # sem onde guardar, só perde o plano B
+
+
+def _ultima_ata_conhecida() -> str | None:
+    try:
+        url = ULTIMA_ATA.read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+    return url if re.search(r"/Copom\d+-not\d{8}\d+\.pdf$", url) else None
+
+
 def _ata_recente(regras: dict, cliente: httpx.Client, tentativas: int = 3, espera_s: float = 2.0) -> str | None:
     """A API do BC às vezes demora ou cai por alguns segundos: tenta de novo antes de desistir."""
     reunioes = None
@@ -93,6 +114,10 @@ def resolver(termo: str, indice: glossario.Indice | None = None, cfg: dict | Non
             url, nome = entrada["url"], entrada["nome"]
         elif entrada["fonte"] == "ata_copom_recente":
             url = _ata_recente(cfg["fontes_periodicas"]["ata_copom_recente"], cliente)
+            if url:
+                _guardar_ultima_ata(url)
+            else:
+                url = _ultima_ata_conhecida()
             nome = nome_da_ata(url) if url else ""
         else:
             url, nome = _recente_periodico(cfg["fontes_periodicas"][entrada["fonte"]], cliente, hoje or date.today()) or (None, "")

@@ -81,6 +81,9 @@ def _dica(f: av.Falha, ancora: Ancora, metricas: dict, indice: glossario.Indice 
             n, hi = int(m[2]), int(m[3])
             extra = (f" O slide {m[1]} tem {n} caracteres e o máximo é {hi}: corte pelo menos {n - hi + 20}, para ficar com "
                      f"margem. Tire o que for menos importante daquele slide, sem mexer nos outros.")
+        elif "gráfico" in f.mensagem:
+            extra = (" Corrija só o gráfico apontado (ou tire-o, se os números do fato não formarem uma série ou comparação), "
+                     "mantendo o resto do carrossel.")
         else:
             extra = " Respeite os limites do formato: corte o que for menos importante em vez de comprimir o texto."
     elif f.metrica == "numeros":
@@ -147,7 +150,7 @@ def construir_ramo(gerador: Cliente, juiz: Cliente, indice: glossario.Indice, cf
             bruto = gerador.completar_json(
                 prompts.sistema(e["nivel"], e["formato"], termos, cfg, e["ancora"]),
                 prompts.usuario(e["ancora"], e.get("feedback")),
-                schema_plano(schemas.SCHEMA_POR_FORMATO[e["formato"]]),
+                schema_plano(schemas.schema_de(e["formato"], cfg)),
             )
             conteudo, erro = schemas.para_conteudo(e["formato"], bruto), None
             conteudo, inseridas = ajustes.explicar_termos(conteudo, e["nivel"], indice, cfg)

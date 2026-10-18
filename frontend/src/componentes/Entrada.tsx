@@ -18,6 +18,7 @@ export default function Entrada({ ocupado, erro, aviso, onGerar }: Props) {
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [niveis, setNiveis] = useState<Nivel[]>([...NIVEIS]);
   const [formatos, setFormatos] = useState<Formato[]>([...FORMATOS]);
+  const [graficos, setGraficos] = useState(false);
 
   const escolha = niveis.length > 0 && formatos.length > 0;
   const linkValido = /^https:\/\/\S+$/i.test(link.trim());
@@ -27,7 +28,8 @@ export default function Entrada({ ocupado, erro, aviso, onGerar }: Props) {
 
   function enviar(e: React.FormEvent) {
     e.preventDefault();
-    const o: Opcoes = { niveis, formatos, prioritario: null, tentativas: 2, forcar: false };
+    const o: Opcoes = { niveis, formatos, prioritario: null, tentativas: 2, forcar: false,
+      graficos: graficos && formatos.includes("carrossel") };
     if (modo === "pdf" && arquivo) onGerar({ tipo: "pdf", arquivo }, o);
     else if (modo === "link") onGerar({ tipo: "link", valor: link.trim() }, o);
     else if (modo === "termo") onGerar({ tipo: "termo", valor: termo.trim() }, o);
@@ -87,6 +89,13 @@ export default function Entrada({ ocupado, erro, aviso, onGerar }: Props) {
             ))}
           </div>
         </div>
+        {formatos.includes("carrossel") && (
+          <label className="interruptor">
+            <input type="checkbox" checked={graficos} onChange={(e) => setGraficos(e.target.checked)} />
+            Incluir gráficos nos carrosséis
+            <span className="legenda">só quando o documento traz números comparáveis</span>
+          </label>
+        )}
         {!escolha && <p className="legenda erro">Marque pelo menos um nível e um formato.</p>}
       </fieldset>
 

@@ -62,8 +62,10 @@ def explicar_termos(conteudo: Conteudo, nivel: str, indice: Indice, cfg: dict) -
     if isinstance(conteudo, Artigo):
         novo: Conteudo = Artigo(titulo=ajustar(conteudo.titulo), corpo=ajustar(conteudo.corpo), conclusao=ajustar(conteudo.conclusao))
     elif isinstance(conteudo, Carrossel):
-        limite = cfg["formatos"]["carrossel"]["caracteres_por_slide"]
-        novo = conteudo.model_copy(update={"slides": [ajustar(s, limite) for s in conteudo.slides]})
+        c = cfg["formatos"]["carrossel"]
+        com_grafico = {g.slide for g in conteudo.graficos}     # o texto desses slides divide o espaço com o gráfico
+        limite = lambda i: c.get("grafico", {}).get("caracteres_no_slide", 120) if i in com_grafico else c["caracteres_por_slide"]
+        novo = conteudo.model_copy(update={"slides": [ajustar(s, limite(i)) for i, s in enumerate(conteudo.slides)]})
     elif isinstance(conteudo, Roteiro):
         from geracao.schemas import marcar_tempo          # a fala cresceu: o tempo das cenas acompanha
         falas = [{"fala": ajustar(c.fala), "visual": c.visual} for c in conteudo.cenas]

@@ -12,7 +12,7 @@ async function json<T>(r: Response): Promise<T> {
   return r.json() as Promise<T>;
 }
 
-export interface Opcoes { niveis: Nivel[]; formatos: Formato[]; prioritario: Nivel | null; tentativas: number; forcar?: boolean }
+export interface Opcoes { niveis: Nivel[]; formatos: Formato[]; prioritario: Nivel | null; tentativas: number; forcar?: boolean; graficos?: boolean }
 
 const SESSAO = "suno_sessao";
 /** A sessão guarda quais PDFs enviados são seus. Também pode vir no endereço (?sessao=nome), por exemplo para
@@ -33,7 +33,8 @@ const consultaSessao = () => (sessaoAtual() ? `?sessao=${encodeURIComponent(sess
 export async function criarJob(tipo: "termo" | "link", valor: string, o: Opcoes): Promise<{ id: string }> {
   return json(await fetch("/api/jobs", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tipo, valor, niveis: o.niveis, formatos: o.formatos, prioritario: o.prioritario, tentativas: o.tentativas, forcar: o.forcar ?? false }),
+    body: JSON.stringify({ tipo, valor, niveis: o.niveis, formatos: o.formatos, prioritario: o.prioritario, tentativas: o.tentativas, forcar: o.forcar ?? false,
+      graficos: o.graficos ?? false }),
   }));
 }
 
@@ -41,6 +42,7 @@ export async function criarJobPdf(arquivo: File, o: Opcoes): Promise<{ id: strin
   const q = new URLSearchParams({ nome: arquivo.name, niveis: o.niveis.join(","), formatos: o.formatos.join(",") });
   if (o.prioritario) q.set("prioritario", o.prioritario);
   if (o.forcar) q.set("forcar", "true");
+  if (o.graficos) q.set("graficos", "true");
   if (sessaoAtual()) q.set("sessao", sessaoAtual());
   const r = await json<{ id: string; sessao?: string }>(
     await fetch(`/api/jobs/pdf?${q}`, { method: "POST", headers: { "Content-Type": "application/pdf" }, body: arquivo }));

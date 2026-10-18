@@ -1,4 +1,7 @@
 """Estruturas mínimas dos três formatos e verificação dos limites (resumo; schemas finais no item 17)."""
+import math
+from typing import Literal
+
 from pydantic import BaseModel
 
 from avaliador.texto import palavras
@@ -10,8 +13,35 @@ class Artigo(BaseModel):
     conclusao: str
 
 
+class Grafico(BaseModel):
+    """Gráfico de um slide do corpo do carrossel. Os valores saem dos fatos do documento e são conferidos como números."""
+    slide: int                       # índice em `slides` (0 = gancho)
+    tipo: Literal["barras", "linha"]
+    titulo: str
+    rotulos: list[str]               # um por ponto, por exemplo os anos
+    valores: list[float]
+    unidade: str = ""                # "%", "p.p.", "R$ bi"
+
+
 class Carrossel(BaseModel):
     slides: list[str]   # primeiro = gancho, último = conclusão
+    graficos: list[Grafico] = []
+
+
+def numero_br(v: float) -> str:
+    """4.9 -> '4,9'; 5216.0 -> '5.216'; até 2 casas, sem zeros à direita: o mesmo jeito que os fatos escrevem."""
+    inteiro, _, decimais = f"{abs(v):,.2f}".partition(".")
+    decimais = decimais.rstrip("0")
+    s = inteiro.replace(",", ".") + (f",{decimais}" if decimais else "")
+    return f"-{s}" if v < 0 else s
+
+
+def texto_dos_graficos(conteudo: "Conteudo") -> str:
+    """O que os gráficos mostram, em texto: título, rótulos e valores, para conferir números e linguagem."""
+    if not isinstance(conteudo, Carrossel):
+        return ""
+    return "\n".join(f"{g.titulo}: " + "; ".join(f"{r} {numero_br(v)}{g.unidade}" for r, v in zip(g.rotulos, g.valores))
+                     for g in conteudo.graficos)
 
 
 class Cena(BaseModel):
@@ -71,6 +101,7 @@ def verificar(conteudo: Conteudo, cfg: dict) -> list[str]:
                 falhas.append(f"slide {i} com {len(s)} caracteres (máximo {c['caracteres_por_slide']})")
             if not s.strip():
                 falhas.append(f"slide {i} vazio")
+        falhas += _verificar_graficos(conteudo, c)
     else:
         v = cfg["video"]
         if not conteudo.cenas:
@@ -89,3 +120,45 @@ def verificar(conteudo: Conteudo, cfg: dict) -> list[str]:
                 falhas.append(f"cena {i} com marcação de tempo inválida")
     return falhas
 
+
+
+def _verificar_graficos(conteudo: Carrossel, c: dict) -> list[str]:
+    """Limites dos gráficos: o desenho cabe no slide de 1080 px com folga, mesmo no pior caso permitido aqui."""
+    if not conteudo.graficos:
+        return []
+    g_cfg = c.get("grafico", {})
+    falhas: list[str] = []
+    maximo = g_cfg.get("maximo", 2)
+    if len(conteudo.graficos) > maximo:
+        falhas.append(f"carrossel com {len(conteudo.graficos)} gráficos (máximo {maximo})")
+    usados: set[int] = set()
+    ultimo = len(conteudo.slides) - 1
+    lo, hi = g_cfg.get("pontos", [2, 6])
+    for g in conteudo.graficos:
+        n = g.slide + 1
+        if not 0 <= g.slide <= ultimo:
+            falhas.append(f"gráfico aponta para o slide {n}, que não existe")
+            continue
+        if g.slide in (0, ultimo):
+            falhas.append(f"gráfico no slide {n}: o gancho e a conclusão não levam gráfico")
+        if g.slide in usados:
+            falhas.append(f"slide {n} com mais de um gráfico")
+        usados.add(g.slide)
+        if len(g.rotulos) != len(g.valores):
+            falhas.append(f"gráfico do slide {n} com {len(g.rotulos)} rótulos para {len(g.valores)} valores")
+        if not lo <= len(g.valores) <= hi:
+            falhas.append(f"gráfico do slide {n} com {len(g.valores)} pontos (esperado de {lo} a {hi})")
+        if any(not math.isfinite(v) for v in g.valores):
+            falhas.append(f"gráfico do slide {n} com valor que não é número")
+        if len(g.titulo) > g_cfg.get("caracteres_titulo", 48):
+            falhas.append(f"gráfico do slide {n}: título com {len(g.titulo)} caracteres (máximo {g_cfg.get('caracteres_titulo', 48)})")
+        for r in g.rotulos:
+            if len(r) > g_cfg.get("caracteres_rotulo", 14):
+                falhas.append(f"gráfico do slide {n}: rótulo '{r}' com {len(r)} caracteres (máximo {g_cfg.get('caracteres_rotulo', 14)})")
+        if len(g.unidade) > g_cfg.get("caracteres_unidade", 6):
+            falhas.append(f"gráfico do slide {n}: unidade '{g.unidade}' longa demais (máximo {g_cfg.get('caracteres_unidade', 6)} caracteres)")
+        texto = conteudo.slides[g.slide]
+        limite = g_cfg.get("caracteres_no_slide", 120)
+        if len(texto) > limite:
+            falhas.append(f"slide {n} com gráfico tem {len(texto)} caracteres de texto (máximo {limite})")
+    return falhas

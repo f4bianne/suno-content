@@ -6,6 +6,7 @@ mesmo documento com a mesma configuração devolve o resultado guardado, sem cha
 Execução: python -m uvicorn api.main:app --reload
 """
 import asyncio
+import copy
 import json
 import threading
 import time
@@ -55,6 +56,7 @@ class PedidoJob(BaseModel):
     concorrencia: int = 2
     sessao: str | None = None
     forcar: bool = False          # ignora o cache e gera de novo
+    graficos: bool = False        # carrossel com gráficos (só com números dos fatos)
 
 
 class Cancelado(Exception):
@@ -96,6 +98,15 @@ def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
             return entrada.ingerir_link(valor, indice)
         return entrada.ingerir_pdf(valor, nome or "documento.pdf", indice)
 
+    def cfg_do_pedido(pedido: PedidoJob) -> dict | None:
+        """Com gráficos, a chave entra na configuração: ela muda o hash do cache, então carrossel com e sem gráfico
+        não se confundem. Sem gráficos, a configuração fica igual à de sempre e o cache continua valendo."""
+        if not (pedido.graficos and "carrossel" in pedido.formatos):
+            return cfg
+        c = copy.deepcopy(cfg or av.carregar_config())
+        c["formatos"]["carrossel"]["graficos"] = True
+        return c
+
     def executar(job: Job, pedido: PedidoJob, tipo: str, valor: Any, nome: str | None) -> None:
         def observar(evento: dict) -> None:
             if job.cancelado.is_set():
@@ -112,7 +123,7 @@ def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
                           "paginas": doc.paginas})
             job.status = "processando"
             proc = processar_com_banco(
-                doc, fabrica_clientes(), indice, repo, cfg, niveis=tuple(pedido.niveis), formatos=tuple(pedido.formatos),
+                doc, fabrica_clientes(), indice, repo, cfg_do_pedido(pedido), niveis=tuple(pedido.niveis), formatos=tuple(pedido.formatos),
                 nivel_prioritario=pedido.prioritario, max_tentativas=pedido.tentativas, concorrencia=pedido.concorrencia,
                 sessao=job.sessao, forcar=pedido.forcar, observador=observar,
             )
@@ -158,12 +169,12 @@ def criar_app(fabrica_clientes: Callable[[], grafo.Clientes] = clientes_padrao,
     @app.post("/api/jobs/pdf")
     async def criar_job_pdf(request: Request, nome: str = "documento.pdf", niveis: str = ",".join(av.NIVEIS),
                             formatos: str = ",".join(FORMATOS), prioritario: str | None = None,
-                            sessao: str | None = None, forcar: bool = False):
+                            sessao: str | None = None, forcar: bool = False, graficos: bool = False):
         dados = await request.body()
         if len(dados) > LIMITE_PDF:
             raise HTTPException(413, "PDF grande demais")
         pedido = PedidoJob(tipo="termo", valor="-", niveis=niveis.split(","), formatos=formatos.split(","),
-                           prioritario=prioritario, sessao=sessao, forcar=forcar)
+                           prioritario=prioritario, sessao=sessao, forcar=forcar, graficos=graficos)
         return abrir(pedido, "pdf", dados, nome, {"tipo": "pdf", "valor": nome})
 
     def pegar(job_id: str) -> Job:

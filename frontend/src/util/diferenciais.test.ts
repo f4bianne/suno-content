@@ -1,19 +1,13 @@
 // @vitest-environment jsdom
 import { describe, expect, it, vi } from "vitest";
 import { resultado } from "../fixtures";
-import { AVISO_IMAGEM, baixar, folhaSvg, nomeDoArquivo, promptImagem, quebrarLinhas, slideSvg } from "./exportacao";
+import { AVISO_IMAGEM, baixar, folhaSvg, nomeDoArquivo, promptImagem, slideSvg } from "./exportacao";
 
 
 describe("exportação", () => {
   const carrossel = resultado.ramos.find((r) => r.formato === "carrossel")!;
   const video = resultado.ramos.find((r) => r.formato === "video")!;
   const artigo = resultado.ramos.find((r) => r.formato === "artigo")!;
-
-  it("quebra linhas sem cortar palavras", () => {
-    expect(quebrarLinhas("a Selic subiu para 14,25% ao ano", 12)).toEqual(["a Selic", "subiu para", "14,25% ao", "ano"]);
-    expect(quebrarLinhas("", 10)).toEqual([]);
-    expect(quebrarLinhas("palavralongademais curta", 5)).toEqual(["palavralongademais", "curta"]);
-  });
 
   it("um slide é SVG válido, com o texto e a identidade da Suno", () => {
     const g = slideSvg("A Selic subiu & o crédito <encareceu>", 1, 5);

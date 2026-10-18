@@ -188,7 +188,7 @@ describe("Entrada e histórico", () => {
     expect(gerar.disabled).toBe(false);
     fireEvent.submit(gerar.closest("form")!);
     expect(onGerar).toHaveBeenCalledWith({ tipo: "termo", valor: "Copom" },
-      { niveis: ["iniciante", "intermediario", "avancado"], formatos: ["artigo", "carrossel", "video"], prioritario: null, tentativas: 2, forcar: false });
+      { niveis: ["iniciante", "intermediario", "avancado"], formatos: ["artigo", "carrossel", "video"], prioritario: null, tentativas: 2, forcar: false, graficos: false });
     expect(screen.queryByText("Opções")).toBeNull();
   });
 

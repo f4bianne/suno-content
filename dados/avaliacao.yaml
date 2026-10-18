@@ -62,6 +62,15 @@ formatos:
     fracao_minima_numeros_por_fato: 0.5
     slides: [5, 10]
     caracteres_por_slide: 220
+    # Gráficos opcionais (a pessoa marca na tela; a API liga `graficos`). Limites pensados para o desenho caber no
+    # slide de 1080 px: o texto de um slide com gráfico fica em cima, o gráfico embaixo.
+    grafico:
+      maximo: 2
+      pontos: [2, 6]
+      caracteres_titulo: 48
+      caracteres_rotulo: 14
+      caracteres_unidade: 6
+      caracteres_no_slide: 120
   video:
     max_fatos: 4        # era 5: em 60 s de fala, com contexto e analogias, 5 fatos não cabiam
     fracao_minima_numeros_por_fato: 0.5

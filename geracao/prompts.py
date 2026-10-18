@@ -1,7 +1,7 @@
 """Prompts do gerador: perfil do nível, instruções do formato e relatório de falhas para a nova tentativa."""
 from avaliador import glossario
 from avaliador.ancora import Ancora
-from avaliador.formatos import Conteudo, texto_corrido
+from avaliador.formatos import Carrossel, Conteudo, numero_br, texto_corrido
 from avaliador.glossario import Termo
 
 PERFIL = {
@@ -104,7 +104,8 @@ def instrucao_formato(formato: str, cfg: dict) -> str:
         return (f"FORMATO: carrossel. gancho (slide 1, que prende a atenção), slides_corpo (de {lo - 2} a {hi - 2} slides) e "
                 f"conclusao (último slide). O total, contando gancho e conclusão, fica entre {lo} e {hi} slides. REGRA DURA: "
                 f"cada slide tem no máximo {c - 50} caracteres (conte; slide acima de {c} é rejeitado, e você tende a passar do que mira). Cada slide de corpo "
-                "traz uma ideia completa. Não cabe tudo: priorize os fatos mais importantes.")
+                "traz uma ideia completa. Não cabe tudo: priorize os fatos mais importantes."
+                + (instrucao_graficos(f["carrossel"]) if f["carrossel"].get("graficos") else ""))
     pmax, pps = f["video"]["duracao_maxima_s"], f["video"]["palavras_por_segundo"]
     minimo, limite = int((pmax - 12) * pps), int((pmax - 4) * pps)     # 120 a 140 palavras: de 48 a 56 s de fala
     return (f"FORMATO: roteiro de vídeo curto, falado, que ocupa quase todo o tempo de {pmax} segundos. Cada cena tem: "
@@ -120,6 +121,23 @@ def instrucao_formato(formato: str, cfg: dict) -> str:
             "quer dizer; (4) o que isso muda ou significa para quem assiste, como consequência geral e sem número novo; "
             "(5) fechamento que resume a ideia, sem pedir para comprar, vender ou aplicar nada. "
             "Termo técnico que exige explicação é explicado na própria cena.")
+
+
+def instrucao_graficos(c: dict) -> str:
+    """Gráfico só com números dos fatos que formem série ou comparação; o slide com gráfico tem pouco texto."""
+    g = c.get("grafico", {})
+    lo, hi = g.get("pontos", [2, 6])
+    return (f" GRÁFICOS (campo graficos): até {g.get('maximo', 2)}, só quando um fato traz de {lo} a {hi} números da MESMA "
+            "unidade que formam uma série no tempo (tipo \"linha\") ou uma comparação entre itens (tipo \"barras\"), por "
+            "exemplo as projeções de inflação para 2026, 2027 e 2028. Se nenhum fato tiver isso, devolva graficos vazio: o "
+            "gráfico é opcional, e um gráfico forçado reprova. Cada gráfico tem: slide_corpo (em qual slide do corpo ele "
+            "aparece, contando de 1; nunca no gancho nem na conclusão, e um gráfico por slide), titulo (até "
+            f"{g.get('caracteres_titulo', 48) - 8} caracteres), rotulos (um por ponto, até {g.get('caracteres_rotulo', 14) - 2} "
+            "caracteres cada, como \"2026\" ou \"Varejo\"), valores (números com ponto decimal, copiados exatamente "
+            f"dos fatos, sem calcular nem arredondar) e unidade (até {g.get('caracteres_unidade', 6)} caracteres, como \"%\", "
+            "\"p.p.\" ou \"R$ bi\"; vazia se não houver). O slide que leva gráfico tem no máximo "
+            f"{g.get('caracteres_no_slide', 120) - 20} caracteres de texto: o texto comenta o que o gráfico mostra, sem "
+            "repetir todos os números.")
 
 
 DICA_DE_LEITURA = {
@@ -193,8 +211,17 @@ def relatorio_de_falhas(falhas: list[str], anterior: Conteudo, nota: str | None 
         "(fatos, números, termos explicados, frases que não têm problema) e altere só os trechos ligados aos problemas "
         "abaixo. Corrigir um problema não pode criar outro: ao incluir um fato, mantenha o tamanho das frases do nível; ao "
         "explicar um termo, não alongue o resto.\n"
-        f"PROBLEMAS:\n{itens}\n\nVERSÃO ANTERIOR:\n{texto_corrido(anterior)}"
+        f"PROBLEMAS:\n{itens}\n\nVERSÃO ANTERIOR:\n{texto_corrido(anterior)}{_graficos_em_texto(anterior)}"
     )
+
+
+def _graficos_em_texto(conteudo: Conteudo) -> str:
+    """Os gráficos da versão anterior, para a reescrita poder mantê-los ou corrigi-los."""
+    if not isinstance(conteudo, Carrossel) or not conteudo.graficos:
+        return ""
+    linhas = [f"- slide_corpo {g.slide}, {g.tipo}, \"{g.titulo}\": "
+              + "; ".join(f"{r} = {numero_br(v)}{g.unidade}" for r, v in zip(g.rotulos, g.valores)) for g in conteudo.graficos]
+    return "\n\nGRÁFICOS DA VERSÃO ANTERIOR:\n" + "\n".join(linhas)
 
 
 def usuario(ancora: Ancora, feedback: str | None = None) -> str:

@@ -8,7 +8,9 @@ export const ROTULO_FORMATO: Record<Formato, string> = { artigo: "Artigo", carro
 
 export interface Fato { id: string; texto: string; numeros: string[]; entidades: string[]; trecho_origem: string }
 export interface Cena { inicio_s: number; fim_s: number; fala: string; visual: string }
-export type Conteudo = { titulo: string; corpo: string; conclusao: string } | { slides: string[] } | { cenas: Cena[] };
+/** Gráfico de um slide do corpo do carrossel; `slide` é o índice em `slides` (0 = gancho). */
+export interface Grafico { slide: number; tipo: "barras" | "linha"; titulo: string; rotulos: string[]; valores: number[]; unidade: string }
+export type Conteudo = { titulo: string; corpo: string; conclusao: string } | { slides: string[]; graficos?: Grafico[] } | { cenas: Cena[] };
 
 export interface Veredito {
   afirmacoes_sem_suporte: string[]; nota_fidelidade: number; criterios_atendidos: string[]; criterios_nao_atendidos: string[];

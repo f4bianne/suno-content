@@ -133,7 +133,7 @@ describe("Entrada: escolher o que gerar", () => {
     fireEvent.click(formatos.getByLabelText("Vídeo curto"));
     fireEvent.submit(botao("Gerar conteúdos").closest("form")!);
     expect(onGerar).toHaveBeenCalledWith({ tipo: "termo", valor: "Copom" },
-      { niveis: ["iniciante"], formatos: ["artigo", "carrossel"], prioritario: null, tentativas: 2, forcar: false });
+      { niveis: ["iniciante"], formatos: ["artigo", "carrossel"], prioritario: null, tentativas: 2, forcar: false, graficos: false });
     fireEvent.click(niveis.getByLabelText("Iniciante"));
     expect((botao("Gerar conteúdos") as HTMLButtonElement).disabled).toBe(true);
     expect(screen.getByText(/pelo menos um nível/)).toBeTruthy();
@@ -197,5 +197,43 @@ describe("Avaliacao: conteúdo bloqueado", () => {
     const { default: Avaliacao } = await import("./Avaliacao");
     render(<Avaliacao ramo={ramoDe("iniciante", "artigo")} config={config} />);
     expect(screen.queryByRole("region", { name: "Por que não foi publicado" })).toBeNull();
+  });
+});
+
+describe("Gráficos no carrossel", () => {
+  const grafico = { slide: 1, tipo: "barras" as const, titulo: "Selic e IPCA", rotulos: ["Selic", "IPCA"], valores: [14.25, 5.06], unidade: "%" };
+  const comGrafico = () => {
+    const base = ramoDe("iniciante", "carrossel");
+    const conteudo = { ...(base.conteudo as { slides: string[] }), graficos: [grafico] };
+    return { ...base, conteudo };
+  };
+
+  it("a caixinha só aparece com carrossel marcado e vai no pedido", async () => {
+    const { default: Entrada } = await import("./Entrada");
+    const onGerar = vi.fn();
+    render(<Entrada ocupado={false} erro={null} onGerar={onGerar} />);
+    fireEvent.change(screen.getByLabelText(/Assunto/), { target: { value: "Copom" } });
+    fireEvent.click(screen.getByLabelText(/Incluir gráficos nos carrosséis/));
+    fireEvent.submit(botao("Gerar conteúdos").closest("form")!);
+    expect(onGerar).toHaveBeenLastCalledWith({ tipo: "termo", valor: "Copom" }, expect.objectContaining({ graficos: true }));
+    fireEvent.click(within(screen.getByRole("group", { name: "Formatos" })).getByLabelText("Carrossel"));
+    expect(screen.queryByLabelText(/Incluir gráficos/)).toBeNull();
+    fireEvent.submit(botao("Gerar conteúdos").closest("form")!);
+    expect(onGerar).toHaveBeenLastCalledWith({ tipo: "termo", valor: "Copom" }, expect.objectContaining({ graficos: false }));
+  });
+
+  it("a prévia e a exportação desenham o gráfico no slide certo", async () => {
+    const { default: ConteudoView } = await import("./ConteudoView");
+    const ramo = comGrafico();
+    const { container, unmount } = render(<ConteudoView conteudo={ramo.conteudo} termos={null} />);
+    expect(screen.getByRole("img", { name: "Gráfico: Selic e IPCA" })).toBeTruthy();
+    expect(container.querySelectorAll(".mini-grafico")).toHaveLength(1);
+    unmount();
+    const { default: ExportarDesign } = await import("./ExportarDesign");
+    render(<ExportarDesign resultado={resultado} ramo={ramo} />);
+    const miniaturas = [...document.querySelectorAll(".slide-imagem")];
+    expect(miniaturas[1].innerHTML).toContain('class="grafico"');
+    expect(miniaturas[1].innerHTML).toContain("14,25%");
+    expect(miniaturas[0].innerHTML).not.toContain('class="grafico"');
   });
 });

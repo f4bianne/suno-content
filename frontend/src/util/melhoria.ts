@@ -65,6 +65,17 @@ export function diagnosticar(falha: string, nivel: Nivel): Diagnostico {
         sugestao: "Descreva o que o documento diz e o que isso significa, sem dizer ao leitor para comprar, vender ou aplicar." };
     case "formato":
     case "duracao":
+      if (msg.includes("gráfico")) {
+        if ((m = /slide (\d+) com gráfico tem (\d+) caracteres de texto \(máximo (\d+)\)/.exec(msg))) {
+          return { problema: `O slide ${m[1]} tem gráfico e ${m[2]} caracteres de texto; com gráfico, o máximo é ${m[3]}.`,
+            sugestao: "Deixe no texto só o comentário do gráfico: os números já aparecem nele." };
+        }
+        if (/não levam gráfico/.test(msg)) {
+          return { problema: `${primeiraMaiuscula(msg)}.`, sugestao: "Mova o gráfico para um dos slides do meio." };
+        }
+        return { problema: `Gráfico fora do padrão: ${msg}.`,
+          sugestao: "Ajuste o gráfico apontado ou tire-o: o gráfico é opcional e só entra com números comparáveis do documento." };
+      }
       if ((m = /artigo com (\d+) palavras \(esperado de (\d+) a (\d+)\)/.exec(msg))) {
         const curto = Number(m[1]) < Number(m[2]);
         return { problema: `O artigo tem ${m[1]} palavras; o esperado é de ${m[2]} a ${m[3]}.`,
@@ -125,5 +136,6 @@ function definicao(msg: string, termo: string): string | null {
   return m ? m[1].trim() : null;
 }
 
+const primeiraMaiuscula = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 const frases = (s: string) => s.split(/(?<=[.!?])\s+/).map((x) => x.trim()).filter(Boolean);
 const br = (n: string) => n.replace(".", ",");

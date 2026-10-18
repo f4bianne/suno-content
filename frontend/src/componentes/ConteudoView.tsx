@@ -1,5 +1,7 @@
-import type { Cena, Conteudo, TermoGlossario } from "../tipos";
+import type { Cena, Conteudo, Grafico, TermoGlossario } from "../tipos";
 import { segmentar } from "../util/destaque";
+import { graficoDoSlide } from "../util/exportacao";
+import { desenharGrafico } from "../util/grafico";
 import { faixaDeTempo } from "../util/roteiro";
 
 /** Texto com os termos técnicos marcados. Passe `termos = null` para mostrar o texto limpo. */
@@ -41,6 +43,7 @@ export default function ConteudoView({ conteudo, termos }: Props) {
           <div key={i} className={`slide${i === 0 || i === n - 1 ? " destaque" : ""}`}>
             <span className="legenda">{i === 0 ? "Gancho" : i === n - 1 ? "Conclusão" : `Slide ${i + 1}`}</span>
             <span>{T(s)}</span>
+            {graficoDoSlide(conteudo.graficos, i) && <MiniGrafico g={graficoDoSlide(conteudo.graficos, i)!} />}
             <span className="legenda">{s.length} caracteres</span>
           </div>
         ))}
@@ -63,4 +66,12 @@ export default function ConteudoView({ conteudo, termos }: Props) {
       ))}
     </ol>
   );
+}
+
+/** O mesmo desenho da exportação, com as cores do tema da tela (variáveis CSS, que funcionam no claro e no escuro). */
+function MiniGrafico({ g }: { g: Grafico }) {
+  const { svg } = desenharGrafico(g, { x: 0, y: 0, largura: 360, altura: 280 },
+    { tinta: "var(--ink)", apoio: "var(--muted)", grade: "var(--rule)", destaque: "var(--suno-red)" });
+  return <svg className="mini-grafico" viewBox="0 0 360 280" role="img" aria-label={`Gráfico: ${g.titulo}`}
+    dangerouslySetInnerHTML={{ __html: svg }} />;
 }

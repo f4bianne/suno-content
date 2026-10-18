@@ -93,7 +93,13 @@ class GeradorFalso:
         chave = nivel_e_formato(sistema)
         self.prompts.append((chave, usuario))
         self.chamadas[chave] = self.chamadas.get(chave, 0) + 1
-        return (ruim if self.chamadas[chave] <= self.falhas else bom)(*chave)
+        resposta = (ruim if self.chamadas[chave] <= self.falhas else bom)(*chave)
+        if "graficos" in schema.get("properties", {}):      # a pessoa pediu gráficos: um, no slide de texto mais curto
+            corpo = resposta["slides_corpo"]
+            menor = min(range(len(corpo)), key=lambda i: len(corpo[i]))
+            resposta["graficos"] = [{"slide_corpo": menor + 1, "tipo": "barras", "titulo": "Selic e IPCA",
+                                     "rotulos": ["Selic", "IPCA"], "valores": [14.25, 5.06], "unidade": "%"}]
+        return resposta
 
 
 class JuizFalso:

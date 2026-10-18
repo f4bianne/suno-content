@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { Processamento, Ramo } from "../tipos";
-import { AVISO_IMAGEM, baixar, folhaSvg, nomeDoArquivo, promptImagem, slideSvgCompleto } from "../util/exportacao";
+import { AVISO_IMAGEM, baixar, folhaSvg, graficoDoSlide, nomeDoArquivo, promptImagem, slideSvgCompleto } from "../util/exportacao";
 import { baixarBlob, svgParaPng } from "../util/imagem";
 import { artigoEmHtml, artigoEmMarkdown, artigoEmTexto } from "../util/artigo";
 import { roteiroEmCsv, roteiroEmMarkdown, roteiroEmTexto } from "../util/roteiro";
@@ -14,6 +14,8 @@ export default function ExportarDesign({ resultado, ramo }: Props) {
   const [ocupado, setOcupado] = useState<string | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const slides = ramo.conteudo && "slides" in ramo.conteudo ? ramo.conteudo.slides : null;
+  const graficos = ramo.conteudo && "slides" in ramo.conteudo ? ramo.conteudo.graficos ?? [] : [];
+  const completo = (i: number) => slideSvgCompleto(slides![i], i, slides!.length, graficoDoSlide(graficos, i));
   const cenas = ramo.conteudo && "cenas" in ramo.conteudo ? ramo.conteudo.cenas : null;
   const artigo = ramo.conteudo && "corpo" in ramo.conteudo ? ramo.conteudo : null;
   const [artigoCopiado, setArtigoCopiado] = useState(false);
@@ -43,7 +45,7 @@ export default function ExportarDesign({ resultado, ramo }: Props) {
     catch { setArtigoCopiado(false); }
   }
 
-  const png = (i: number) => svgParaPng(slideSvgCompleto(slides![i], i, slides!.length));
+  const png = (i: number) => svgParaPng(completo(i));
   const baixarPng = (i: number) => executar(`png${i}`, async () => baixarBlob(nomeDoArquivo(resultado, ramo, `slide-${i + 1}.png`), await png(i), "image/png"));
   const baixarZip = () => executar("zip", async () => {
     const arquivos = [];
@@ -60,7 +62,7 @@ export default function ExportarDesign({ resultado, ramo }: Props) {
             {slides.map((s, i) => (
               <figure key={i} className="slide-miniatura">
                 <div className="slide-imagem" role="img" aria-label={`Slide ${i + 1}: ${s}`}
-                  dangerouslySetInnerHTML={{ __html: slideSvgCompleto(s, i, slides.length) }} />
+                  dangerouslySetInnerHTML={{ __html: completo(i) }} />
                 <figcaption>
                   <span className="legenda">Slide {i + 1}</span>
                   <span className="slide-acoes">
@@ -68,7 +70,7 @@ export default function ExportarDesign({ resultado, ramo }: Props) {
                       {ocupado === `png${i}` ? "Gerando…" : "PNG"}
                     </button>
                     <button type="button" className="botao-texto"
-                      onClick={() => baixar(nomeDoArquivo(resultado, ramo, `slide-${i + 1}.svg`), slideSvgCompleto(s, i, slides.length), "image/svg+xml")}>
+                      onClick={() => baixar(nomeDoArquivo(resultado, ramo, `slide-${i + 1}.svg`), completo(i), "image/svg+xml")}>
                       SVG
                     </button>
                   </span>
@@ -80,7 +82,7 @@ export default function ExportarDesign({ resultado, ramo }: Props) {
             <button type="button" className="botao-contorno" disabled={ocupado !== null} onClick={baixarZip}>
               {ocupado === "zip" ? "Gerando as imagens…" : "Baixar todos os slides (PNG, .zip)"}
             </button>
-            <button type="button" className="botao-contorno" onClick={() => baixar(nomeDoArquivo(resultado, ramo, "carrossel.svg"), folhaSvg(slides), "image/svg+xml")}>
+            <button type="button" className="botao-contorno" onClick={() => baixar(nomeDoArquivo(resultado, ramo, "carrossel.svg"), folhaSvg(slides, graficos), "image/svg+xml")}>
               Folha única para o Figma (SVG)
             </button>
           </div>

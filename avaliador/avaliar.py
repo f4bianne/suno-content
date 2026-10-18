@@ -73,8 +73,9 @@ def avaliar(conteudo: formatos.Conteudo, nivel: str, indice: glossario.Indice,
     if minimo is not None and dens["nivel23_por_100_palavras"] < minimo:
         falhas.append(Falha("glossario", f"densidade de termos nível 2-3 {dens['nivel23_por_100_palavras']} abaixo de {minimo} por 100 palavras"))
 
-    # Recomendação
-    for trecho in recomendacao.achar(texto):
+    # Recomendação (no texto e nos títulos e rótulos dos gráficos)
+    graficos = formatos.texto_dos_graficos(conteudo)
+    for trecho in recomendacao.achar(f"{texto}\n{graficos}" if graficos else texto):
         falhas.append(Falha("recomendacao", f"linguagem de recomendação: \"{trecho}\""))
 
     # Âncora: números e cobertura
@@ -85,6 +86,10 @@ def avaliar(conteudo: formatos.Conteudo, nivel: str, indice: glossario.Indice,
                                    n["tolerancia_relativa"], n["marcadores"])
         for x in res.invalidos:
             falhas.append(Falha("numeros", f"número '{x}' não existe na âncora"))
+        # Gráfico mostra número como o texto: cada valor e cada rótulo precisam existir nos fatos, sem arredondar.
+        if graficos:
+            for x in dict.fromkeys(anc.conferir_numeros(graficos, ancora, False, 0.0, []).invalidos):
+                falhas.append(Falha("numeros", f"gráfico traz o número '{x}', que não existe na âncora"))
         metricas["numeros_arredondados"] = res.arredondados
         cob = anc.cobertura(texto, ancora, cfg["formatos"].get(metricas["formato"], {}).get("fracao_minima_numeros_por_fato", 1.0))
         metricas["cobertura"] = round(cob.fracao, 3)

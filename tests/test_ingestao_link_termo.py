@@ -134,6 +134,12 @@ URL_ATA = "https://www.bcb.gov.br/content/copom/atascopom/Copom281-not2026091628
 API_ATAS = CFG["fontes_periodicas"]["ata_copom_recente"]["api"]
 
 
+@pytest.fixture(autouse=True)
+def ultima_ata_temporaria(tmp_path, monkeypatch):
+    """A última ata conhecida vai para uma pasta temporária: os testes não tocam em dados/ultima_ata.txt."""
+    monkeypatch.setattr(termo, "ULTIMA_ATA", tmp_path / "ultima_ata.txt")
+
+
 def test_termo_resolve_para_a_ata_mais_recente(indice):
     c = cliente({API_ATAS: (200, "application/json", ATAS.encode())})
     r = termo.resolver("Selic", indice, CFG, c)
@@ -207,3 +213,19 @@ def test_ata_recente_desiste_depois_das_tentativas(monkeypatch):
     monkeypatch.setattr(termo.time, "sleep", lambda s: None)
     c = httpx.Client(transport=httpx.MockTransport(lambda req: httpx.Response(500)))
     assert termo._ata_recente(CFG["fontes_periodicas"]["ata_copom_recente"], c) is None
+
+
+def test_api_fora_do_ar_usa_a_ultima_ata_conhecida(indice, monkeypatch):
+    monkeypatch.setattr(termo.time, "sleep", lambda s: None)
+    ok = cliente({API_ATAS: (200, "application/json", ATAS.encode())})
+    assert termo.resolver("Copom", indice, CFG, ok).url == URL_ATA          # deu certo: a ata fica guardada
+    fora = httpx.Client(transport=httpx.MockTransport(lambda req: httpx.Response(400, text="<html>Requisição inválida</html>")))
+    r = termo.resolver("Copom", indice, CFG, fora)
+    assert r.url == URL_ATA and r.documento == "Ata da 281ª reunião do Copom (16/09/2026)"
+
+
+def test_api_fora_do_ar_sem_ata_guardada_explica(indice, monkeypatch):
+    monkeypatch.setattr(termo.time, "sleep", lambda s: None)
+    fora = httpx.Client(transport=httpx.MockTransport(lambda req: httpx.Response(400)))
+    with pytest.raises(ErroIngestao, match="Não consegui localizar"):
+        termo.resolver("Copom", indice, CFG, fora)
