@@ -1,0 +1,2 @@
+# Arquivos de dados ficam sempre com LF: o hash do glossário entra na chave do cache e não pode mudar com o checkout.
+dados/*.yaml text eol=lf
